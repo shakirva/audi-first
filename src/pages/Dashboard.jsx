@@ -10,6 +10,7 @@ import { monthlyRevenue, eventTypes } from "../data/dummyData";
 import { useNavigate } from "react-router-dom";
 import { useBookings } from "../context/BookingsContext";
 import { useRole } from "../context/RoleContext";
+import { useDemo } from "../context/DemoContext";
 
 const todayStr = new Date().toISOString().split("T")[0];
 const PIE_COLORS = ["#1B4332", "#2D6A4F", "#D4A017", "#40916C", "#74C69D", "#95d5b2"];
@@ -54,6 +55,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { bookings } = useBookings();
   const { can } = useRole();
+  const { applyDemo, isDemoMode, demoRatio } = useDemo();
 
   const { from, to } = getDateRange(dateFilter);
   const filtered = bookings.filter((b) => b.date >= from && b.date <= to);
@@ -68,6 +70,11 @@ export default function Dashboard() {
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(0, 6);
 
+  // Apply demo scaling if active
+  const displayRevenue  = applyDemo(totalRevenue, "amount");
+  const displayPending  = applyDemo(pending, "count");
+  const displayToday    = applyDemo(todayBookings.length, "count");
+
   const DATE_FILTERS = ["Today", "Week", "Month", "Year"];
 
   const quickActions = [
@@ -79,6 +86,19 @@ export default function Dashboard() {
 
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif", maxWidth: 1400 }}>
+
+      {/* ── DEMO MODE BANNER ── */}
+      {isDemoMode && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 18px", background: "linear-gradient(90deg, #4f46e5, #7c3aed)", borderRadius: 12, marginBottom: 16, gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 18 }}>🎭</span>
+            <p style={{ fontSize: 12, fontWeight: 700, color: "#fff", margin: 0 }}>
+              DEMO MODE ACTIVE — Numbers scaled to {Math.round(demoRatio * 100)}% of actual values
+            </p>
+          </div>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", flexShrink: 0 }}>Disable in Settings → Demo Mode</span>
+        </div>
+      )}
 
       {/* ── DATE FILTER TOGGLE ── */}
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16, gap: 4 }}>
@@ -100,10 +120,10 @@ export default function Dashboard() {
 
       {/* ── STAT CARDS ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
-        <StatCard title="Total Bookings" value={filtered.length}  sub={dateFilter}          icon={Calendar}      color="green" trend="+12%" trendUp />
-        {can("canViewRevenue") && <StatCard title="Revenue"       value={`₹${(totalRevenue / 100000).toFixed(1)}L`} sub="Confirmed" icon={IndianRupee} color="gold" trend="+8%" trendUp />}
-        {can("canViewRevenue") && <StatCard title="Pending"       value={pending}         sub="Awaiting payment"   icon={Clock}         color="red"   trend={`${pending} due`} trendUp={false} />}
-        <StatCard title="Customers"       value={new Set(filtered.map((b) => b.phone)).size} sub="Unique clients" icon={Users}  color="blue"  trend="+5 new" trendUp />
+        <StatCard title="Total Bookings" value={applyDemo(filtered.length, "count")}  sub={dateFilter}          icon={Calendar}      color="green" trend="+12%" trendUp />
+        {can("canViewRevenue") && <StatCard title="Revenue"       value={`₹${(displayRevenue / 100000).toFixed(1)}L`} sub={isDemoMode ? "Demo View" : "Confirmed"} icon={IndianRupee} color="gold" trend="+8%" trendUp />}
+        {can("canViewRevenue") && <StatCard title="Pending"       value={displayPending}         sub="Awaiting payment"   icon={Clock}         color="red"   trend={`${displayPending} due`} trendUp={false} />}
+        <StatCard title="Customers"       value={applyDemo(new Set(filtered.map((b) => b.phone)).size, "count")} sub="Unique clients" icon={Users}  color="blue"  trend="+5 new" trendUp />
       </div>
 
       {/* ── CHARTS ROW ── */}
@@ -164,7 +184,7 @@ export default function Dashboard() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <p style={{ ...S.sectionTitle, marginBottom: 0 }}>Today's Events</p>
               <span style={{ fontSize: 11, fontWeight: 700, background: "#F0F4EF", color: "#1B4332", padding: "3px 12px", borderRadius: 20 }}>
-                {todayBookings.length} booked
+                {displayToday} booked
               </span>
             </div>
             {todayBookings.length === 0 ? (

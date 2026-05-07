@@ -1,14 +1,7 @@
 import { X, Printer, MessageCircle } from "lucide-react";
 import { auditoriumInfo } from "../data/dummyData";
 import { useToast } from "./Toast";
-
-/* GST Helper: totalAmount = GST-exclusive base. Grand total = base * 1.18 */
-export function calcGST(baseAmount, gstApplicable = true) {
-  if (!gstApplicable) return { base: baseAmount, cgst: 0, sgst: 0, grandTotal: baseAmount };
-  const cgst = Math.round(baseAmount * 0.09);
-  const sgst = Math.round(baseAmount * 0.09);
-  return { base: baseAmount, cgst, sgst, grandTotal: baseAmount + cgst + sgst };
-}
+import { calcGST } from "../utils/gst";
 
 export default function InvoiceModal({ booking, onClose }) {
   const { addToast } = useToast();

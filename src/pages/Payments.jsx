@@ -2,6 +2,7 @@ import { useState } from "react";
 import { CheckCircle, MessageCircle } from "lucide-react";
 import { useToast } from "../components/Toast";
 import { useBookings } from "../context/BookingsContext";
+import { useDemo } from "../context/DemoContext";
 
 const today = new Date();
 
@@ -20,6 +21,7 @@ function urgencyStyle(days) {
 export default function Payments() {
   const { addToast } = useToast();
   const { bookings, updateStatus } = useBookings();
+  const { applyDemo, isDemoMode } = useDemo();
   const [paid, setPaid] = useState({});
 
   const pending = bookings.filter(b => b.status === "Pending Payment");
@@ -63,13 +65,21 @@ export default function Payments() {
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
+      {/* ── DEMO MODE BANNER ── */}
+      {isDemoMode && (
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 18px", background: "linear-gradient(90deg, #4f46e5, #7c3aed)", borderRadius: 12, marginBottom: 16 }}>
+          <span style={{ fontSize: 16 }}>🎭</span>
+          <p style={{ fontSize: 12, fontWeight: 700, color: "#fff", margin: 0 }}>Demo Mode — All amounts are scaled. Real data unchanged.</p>
+        </div>
+      )}
+
       {/* ── STAT CARDS ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
         {[
-          { label: "Total Revenue",    value: `₹${(totalRevenue/100000).toFixed(1)}L`,    icon: "💰", bg: "#f0faf4", color: "#1B4332" },
-          { label: "Advance Collected",value: `₹${(totalAdvance/100000).toFixed(1)}L`,    icon: "✅", bg: "#fffbeb", color: "#D4A017" },
-          { label: "Balance Due",      value: `₹${(totalBalance/1000).toFixed(0)}k`,      icon: "🕐", bg: "#eff6ff", color: "#2563eb" },
-          { label: "Pending Dues",     value: `₹${(pendingAmount/1000).toFixed(0)}k`,     icon: "⚠️", bg: "#fff5f5", color: "#C0392B" },
+          { label: "Total Revenue",    value: `₹${(applyDemo(totalRevenue,"amount")/100000).toFixed(1)}L`,    icon: "💰", bg: "#f0faf4", color: "#1B4332" },
+          { label: "Advance Collected",value: `₹${(applyDemo(totalAdvance,"amount")/100000).toFixed(1)}L`,    icon: "✅", bg: "#fffbeb", color: "#D4A017" },
+          { label: "Balance Due",      value: `₹${(applyDemo(totalBalance,"amount")/1000).toFixed(0)}k`,      icon: "🕐", bg: "#eff6ff", color: "#2563eb" },
+          { label: "Pending Dues",     value: `₹${(applyDemo(pendingAmount,"amount")/1000).toFixed(0)}k`,     icon: "⚠️", bg: "#fff5f5", color: "#C0392B" },
         ].map(s => (
           <div key={s.label} style={{ background: s.bg, borderRadius: 14, padding: "18px 20px", display: "flex", alignItems: "center", gap: 12 }}>
             <span style={{ fontSize: 26 }}>{s.icon}</span>
@@ -227,12 +237,12 @@ export default function Payments() {
             GST Summary
           </h3>
           {[
-            { label: "Gross Revenue (All)",      value: `₹${totalRevenue.toLocaleString()}`,         color: "#111827" },
-            { label: `GST Taxable Base (${gstBookings.length} bookings)`, value: `₹${gstBase.toLocaleString()}`, color: "#374151" },
-            { label: "CGST Payable @ 9%",        value: `₹${totalCGST.toLocaleString()}`,            color: "#D4A017" },
-            { label: "SGST Payable @ 9%",        value: `₹${totalSGST.toLocaleString()}`,            color: "#D4A017" },
-            { label: "Total GST Payable",        value: `₹${totalGST.toLocaleString()}`,             color: "#C0392B" },
-            { label: `GST Exempt Bookings`,      value: `${exemptCount} bookings`,                   color: "#15803d" },
+            { label: "Gross Revenue (All)",      value: `₹${applyDemo(totalRevenue,"amount").toLocaleString()}`,  color: "#111827" },
+            { label: `GST Taxable Base (${applyDemo(gstBookings.length,"count")} bookings)`, value: `₹${applyDemo(gstBase,"amount").toLocaleString()}`, color: "#374151" },
+            { label: "CGST Payable @ 9%",        value: `₹${applyDemo(totalCGST,"amount").toLocaleString()}`,    color: "#D4A017" },
+            { label: "SGST Payable @ 9%",        value: `₹${applyDemo(totalSGST,"amount").toLocaleString()}`,    color: "#D4A017" },
+            { label: "Total GST Payable",        value: `₹${applyDemo(totalGST,"amount").toLocaleString()}`,     color: "#C0392B" },
+            { label: `GST Exempt Bookings`,      value: `${exemptCount} bookings`,                               color: "#15803d" },
           ].map((row, i) => (
             <div key={row.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: i < 5 ? "1px solid #f3f4f6" : "none" }}>
               <span style={{ fontSize: 12, color: "#6b7280" }}>{row.label}</span>
@@ -242,7 +252,7 @@ export default function Payments() {
           <div style={{ marginTop: 16, padding: 14, background: "#F0F4EF", borderRadius: 10, textAlign: "center" }}>
             <p style={{ fontSize: 11, color: "#6b7280" }}>Q2 FY 2025-26 · SAC 997212</p>
             <p style={{ fontSize: 18, fontWeight: 800, color: "#1B4332", marginTop: 4 }}>
-              ₹{(totalRevenue + totalGST).toLocaleString()}
+              ₹{applyDemo(totalRevenue + totalGST, "amount").toLocaleString()}
             </p>
             <p style={{ fontSize: 11, color: "#6b7280" }}>Total Revenue incl. GST</p>
           </div>

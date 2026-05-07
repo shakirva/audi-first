@@ -16,6 +16,7 @@ import PublicBooking from "./pages/PublicBooking";
 import Login from "./pages/Login";
 import { BookingsProvider } from "./context/BookingsContext";
 import { RoleProvider, useRole } from "./context/RoleContext";
+import { DemoProvider } from "./context/DemoContext";
 
 const pageTitles = {
   "/": "Dashboard",
@@ -79,12 +80,14 @@ function AppGate() {
 export default function App() {
   return (
     <RoleProvider>
-      <BookingsProvider>
-        <Routes>
-          <Route path="/book" element={<PublicBooking />} />
-          <Route path="/*" element={<AppGate />} />
-        </Routes>
-      </BookingsProvider>
+      <DemoProvider>
+        <BookingsProvider>
+          <Routes>
+            <Route path="/book" element={<PublicBooking />} />
+            <Route path="/*" element={<AppGate />} />
+          </Routes>
+        </BookingsProvider>
+      </DemoProvider>
     </RoleProvider>
   );
 }
