@@ -88,39 +88,39 @@ export default function Notifications() {
     <div style={{ fontFamily: "'DM Sans', sans-serif", maxWidth: 800, margin: "0 auto" }}>
 
       {/* ── Header ── */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 14, background: "#1B4332", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Bell size={22} color="#fff" />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, gap: 10, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 10, background: "#1B4332", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <Bell size={18} color="#fff" />
           </div>
-          <div>
-            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: "#111827" }}>Notifications</h2>
-            <p style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>{unreadCount} unread notifications</p>
+          <div style={{ minWidth: 0 }}>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, fontWeight: 700, color: "#111827", margin: 0 }}>Notifications</h2>
+            <p style={{ fontSize: 11, color: "#6b7280", marginTop: 1, margin: 0 }}>{unreadCount} unread</p>
           </div>
         </div>
         {unreadCount > 0 && (
           <button
             onClick={markAllRead}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 10, border: "1.5px solid #1B4332", background: "#fff", color: "#1B4332", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}
+            style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 12px", borderRadius: 8, border: "1px solid #1B4332", background: "#fff", color: "#1B4332", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", whiteSpace: "nowrap" }}
           >
-            <CheckCheck size={14} /> Mark all read
+            <CheckCheck size={12} /> Mark all
           </button>
         )}
       </div>
 
       {/* ── Filter pills ── */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 20, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 5, marginBottom: 12, flexWrap: "wrap", overflowX: "auto", paddingBottom: 4, "@media (maxWidth: 480px)": { fontSize: 10 } }}>
         {FILTERS.map(f => (
           <button
             key={f}
             onClick={() => setFilter(f)}
             style={{
-              padding: "5px 14px", borderRadius: 20, border: "1.5px solid",
+              padding: "4px 12px", borderRadius: 20, border: "1px solid",
               borderColor: filter === f ? "#1B4332" : "#e5e7eb",
               background: filter === f ? "#1B4332" : "#fff",
               color: filter === f ? "#fff" : "#6b7280",
-              fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
-              transition: "all 0.15s",
+              fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+              transition: "all 0.15s", whiteSpace: "nowrap", flexShrink: 0,
             }}
           >
             {f}{f === "Unread" && unreadCount > 0 ? ` (${unreadCount})` : ""}
@@ -129,11 +129,11 @@ export default function Notifications() {
       </div>
 
       {/* ── List ── */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {displayed.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "48px 24px", background: "#fff", borderRadius: 16, boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
-            <Bell size={40} color="#d1d5db" style={{ margin: "0 auto 12px" }} />
-            <p style={{ fontSize: 14, color: "#9ca3af" }}>No notifications in this category</p>
+          <div style={{ textAlign: "center", padding: "32px 16px", background: "#fff", borderRadius: 12, boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
+            <Bell size={32} color="#d1d5db" style={{ margin: "0 auto 10px" }} />
+            <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>No notifications</p>
           </div>
         ) : (
           displayed.map((n) => {
@@ -144,41 +144,39 @@ export default function Notifications() {
                 key={n.id}
                 onClick={() => markRead(n.id)}
                 style={{
-                  display: "flex", alignItems: "flex-start", gap: 14,
+                  display: "flex", alignItems: "flex-start", gap: 10,
                   background: n.read ? "#fff" : "#fefce8",
-                  borderRadius: 14, padding: "14px 18px",
-                  boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
-                  border: `1.5px solid ${n.read ? "#f3f4f6" : "#fde68a"}`,
+                  borderRadius: 10, padding: "10px 12px",
+                  boxShadow: "0 1px 6px rgba(0,0,0,0.05)",
+                  border: `1px solid ${n.read ? "#f3f4f6" : "#fde68a"}`,
                   cursor: "pointer", transition: "all 0.15s",
                   position: "relative",
                 }}
-                onMouseEnter={e => e.currentTarget.style.transform = "translateY(-1px)"}
-                onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
               >
                 {/* Icon */}
-                <div style={{ width: 40, height: 40, borderRadius: 12, background: cfg.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <Icon size={18} color={cfg.color} />
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: cfg.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <Icon size={16} color={cfg.color} />
                 </div>
 
                 {/* Content */}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
-                    <span style={{ fontSize: 13, fontWeight: n.read ? 600 : 700, color: "#111827" }}>{n.title}</span>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: cfg.color, background: cfg.bg, padding: "2px 8px", borderRadius: 20 }}>{cfg.label}</span>
-                    {!n.read && <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444", flexShrink: 0 }} />}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 12, fontWeight: n.read ? 600 : 700, color: "#111827" }}>{n.title}</span>
+                    <span style={{ fontSize: 9, fontWeight: 700, color: cfg.color, background: cfg.bg, padding: "1px 6px", borderRadius: 20 }}>{cfg.label}</span>
+                    {!n.read && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#ef4444", flexShrink: 0 }} />}
                   </div>
-                  <p style={{ fontSize: 12, color: "#6b7280", lineHeight: 1.5 }}>{n.message}</p>
-                  <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>{n.time}</p>
+                  <p style={{ fontSize: 11, color: "#6b7280", lineHeight: 1.4, margin: "2px 0 0 0" }}>{n.message}</p>
+                  <p style={{ fontSize: 10, color: "#9ca3af", marginTop: 2, margin: "2px 0 0 0" }}>{n.time}</p>
                 </div>
 
                 {/* Delete */}
                 <button
                   onClick={(e) => { e.stopPropagation(); remove(n.id); }}
-                  style={{ padding: 6, borderRadius: 8, border: "none", background: "transparent", cursor: "pointer", color: "#d1d5db", flexShrink: 0 }}
+                  style={{ padding: 5, borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", color: "#d1d5db", flexShrink: 0 }}
                   onMouseEnter={e => { e.currentTarget.style.color = "#ef4444"; e.currentTarget.style.background = "#fef2f2"; }}
                   onMouseLeave={e => { e.currentTarget.style.color = "#d1d5db"; e.currentTarget.style.background = "transparent"; }}
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={12} />
                 </button>
               </div>
             );

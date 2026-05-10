@@ -3,8 +3,6 @@ import { Save, Building2, User, MapPin, IndianRupee, Users, CheckCircle, X, Copy
 import { auditoriumInfo } from "../data/dummyData";
 import { useToast } from "../components/Toast";
 import { useRole } from "../context/RoleContext";
-import { useDemo } from "../context/DemoContext";
-import { useBookings } from "../context/BookingsContext";
 
 const INIT_HALLS = [
   { name: "Main Hall",  icon: "🏛️", price: 15000, capacity: 600, description: "Grand ballroom with full AV setup" },
@@ -13,33 +11,30 @@ const INIT_HALLS = [
 ];
 
 const iStyle = {
-  width: "100%", padding: "10px 14px", borderRadius: 10,
-  border: "1.5px solid #e5e7eb", fontSize: 13, color: "#374151",
+  width: "100%", padding: "8px 12px", borderRadius: 8,
+  border: "1px solid #e5e7eb", fontSize: 12, color: "#374151",
   background: "#fff", outline: "none", fontFamily: "'DM Sans', sans-serif",
   boxSizing: "border-box",
 };
 const labelSt = {
-  fontSize: 11, fontWeight: 700, color: "#6b7280",
-  textTransform: "uppercase", letterSpacing: "0.08em",
-  display: "flex", alignItems: "center", gap: 5, marginBottom: 6,
+  fontSize: 10, fontWeight: 700, color: "#6b7280",
+  textTransform: "uppercase", letterSpacing: "0.07em",
+  display: "flex", alignItems: "center", gap: 4, marginBottom: 5,
 };
 const cardSt = {
-  background: "#fff", borderRadius: 16,
-  boxShadow: "0 2px 16px rgba(0,0,0,0.06)", padding: 24, marginBottom: 24,
+  background: "#fff", borderRadius: 12,
+  boxShadow: "0 1px 6px rgba(0,0,0,0.05)", padding: 14, marginBottom: 12,
 };
 const sectionTitle = {
-  fontFamily: "'Playfair Display', serif", fontSize: 16,
-  fontWeight: 700, color: "#111827", marginBottom: 6,
+  fontFamily: "'Playfair Display', serif", fontSize: 14,
+  fontWeight: 700, color: "#111827", marginBottom: 10, margin: 0,
 };
 
 export default function Settings() {
   const { addToast } = useToast();
   const { role, managerRevenueEnabled, setManagerRevenueEnabled } = useRole();
-  const { isDemoMode, toggleDemoMode, demoRatio, setDemoRatio } = useDemo();
-  const { bookings, brotherDefaultVisible, setBrotherDefaultVisible } = useBookings();
   const isOwner = role === "Owner";
   const isAdminRole = role === "Owner" || role === "Manager"; // both see full settings
-  const hiddenFromBrother = bookings.filter((b) => b.showToBrother === false).length;
 
   // ── Venue Info ──
   const [venue, setVenue] = useState({
@@ -207,121 +202,6 @@ export default function Settings() {
             <span style={{ fontSize: 14 }}>💡</span>
             <p style={{ fontSize: 11, color: "#92400e", margin: 0, lineHeight: 1.5 }}>
               Changes take effect immediately. Manager will see or lose access to <strong>Revenue stats, Payments & Reports</strong> on their next page load.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* ── BROTHER ACCOUNT VISIBILITY (Owner only) ── */}
-      {isOwner && (
-        <div style={{ ...cardSt, border: "1.5px solid #bae6fd", background: "linear-gradient(135deg, #ecfeff, #f0f9ff)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: "#cffafe", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Users size={18} color="#155e75" />
-            </div>
-            <div>
-              <p style={{ ...sectionTitle, color: "#155e75", margin: 0 }}>Brother Account View Control</p>
-              <p style={{ fontSize: 12, color: "#0e7490", margin: 0 }}>Choose what the second account can see (without affecting real data)</p>
-            </div>
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderRadius: 12, background: "#fff", border: "1.5px solid #bae6fd", marginBottom: 12 }}>
-            <div>
-              <p style={{ fontSize: 13, fontWeight: 700, color: "#374151", margin: 0 }}>Default visibility for new bookings</p>
-              <p style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>
-                {brotherDefaultVisible ? "New bookings will be visible to Brother" : "New bookings will be hidden from Brother"}
-              </p>
-            </div>
-            <button
-              onClick={() => {
-                setBrotherDefaultVisible(!brotherDefaultVisible);
-                addToast(`Brother default changed: ${!brotherDefaultVisible ? "Visible" : "Hidden"}`, "success");
-              }}
-              style={{ background: "none", border: "none", cursor: "pointer", padding: 0, flexShrink: 0 }}
-            >
-              {brotherDefaultVisible ? <ToggleRight size={38} color="#0891b2" /> : <ToggleLeft size={38} color="#9ca3af" />}
-            </button>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            <div style={{ background: "#fff", border: "1px solid #bae6fd", borderRadius: 10, padding: "10px 12px" }}>
-              <p style={{ fontSize: 10, color: "#6b7280", margin: 0 }}>Total Bookings</p>
-              <p style={{ fontSize: 19, fontWeight: 800, color: "#155e75", margin: "4px 0 0" }}>{bookings.length}</p>
-            </div>
-            <div style={{ background: "#fff", border: "1px solid #bae6fd", borderRadius: 10, padding: "10px 12px" }}>
-              <p style={{ fontSize: 10, color: "#6b7280", margin: 0 }}>Hidden From Brother</p>
-              <p style={{ fontSize: 19, fontWeight: 800, color: "#b91c1c", margin: "4px 0 0" }}>{hiddenFromBrother}</p>
-            </div>
-          </div>
-
-          <div style={{ marginTop: 10, background: "#e0f2fe", borderRadius: 10, padding: "10px 14px", display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 14 }}>ℹ️</span>
-            <p style={{ fontSize: 11, color: "#0c4a6e", margin: 0, lineHeight: 1.45 }}>
-              To hide/show a specific booking, open <strong>Bookings → View</strong> and use <strong>"Visible in Brother Account"</strong> toggle.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* ── DEMO / PRESENTATION MODE (Owner only) ── */}
-      {isOwner && (
-        <div style={{ ...cardSt, border: "1.5px solid #c7d2fe", background: "linear-gradient(135deg, #eef2ff, #f5f3ff)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-            <span style={{ fontSize: 22 }}>🎭</span>
-            <div>
-              <p style={{ ...sectionTitle, color: "#3730a3", margin: 0 }}>Demo / Presentation Mode</p>
-              <p style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>Scale down displayed numbers for client demos or study presentations. Real data is never changed.</p>
-            </div>
-          </div>
-
-          {/* Master toggle */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", background: isDemoMode ? "#ede9fe" : "#f9fafb", borderRadius: 12, marginBottom: 16, border: `1.5px solid ${isDemoMode ? "#a78bfa" : "#e5e7eb"}` }}>
-            <div>
-              <p style={{ fontSize: 13, fontWeight: 700, color: isDemoMode ? "#5b21b6" : "#374151", margin: 0 }}>
-                {isDemoMode ? "🟣 Demo Mode ACTIVE — Numbers are scaled" : "⚪ Demo Mode OFF — Showing real data"}
-              </p>
-              <p style={{ fontSize: 11, color: "#6b7280", marginTop: 3 }}>Toggle to switch between real view and demo view</p>
-            </div>
-            <button onClick={toggleDemoMode} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, flexShrink: 0 }}>
-              {isDemoMode ? <ToggleRight size={38} color="#5b21b6" /> : <ToggleLeft size={38} color="#9ca3af" />}
-            </button>
-          </div>
-
-          {/* Ratio slider */}
-          {isDemoMode && (
-            <div style={{ padding: "14px 16px", background: "#fff", borderRadius: 12, border: "1px solid #ddd6fe" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                <p style={{ fontSize: 12, fontWeight: 700, color: "#5b21b6", margin: 0 }}>Display Ratio: <span style={{ fontSize: 16 }}>{Math.round(demoRatio * 100)}%</span></p>
-                <p style={{ fontSize: 11, color: "#6b7280", margin: 0 }}>of actual values</p>
-              </div>
-              <input type="range" min="10" max="90" step="5"
-                value={Math.round(demoRatio * 100)}
-                onChange={e => setDemoRatio(parseInt(e.target.value) / 100)}
-                style={{ width: "100%", accentColor: "#5b21b6", cursor: "pointer" }}
-              />
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#9ca3af", marginTop: 4 }}>
-                <span>10% (very low)</span><span>50% (half)</span><span>90% (near real)</span>
-              </div>
-              {/* Live preview */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginTop: 14 }}>
-                {[
-                  { label: "₹1,50,000 revenue", demo: `₹${Math.round(150000 * demoRatio / 100) * 100 .toLocaleString()}` },
-                  { label: "24 bookings", demo: `${Math.max(1, Math.floor(24 * demoRatio))} bookings` },
-                  { label: "₹27,000 GST", demo: `₹${Math.round(27000 * demoRatio / 100) * 100 .toLocaleString()} GST` },
-                ].map(item => (
-                  <div key={item.label} style={{ background: "#f5f3ff", borderRadius: 10, padding: "10px 12px", textAlign: "center" }}>
-                    <p style={{ fontSize: 10, color: "#9ca3af", margin: "0 0 4px" }}>{item.label}</p>
-                    <p style={{ fontSize: 13, fontWeight: 800, color: "#5b21b6", margin: 0 }}>→ {item.demo}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div style={{ background: "#e0e7ff", borderRadius: 10, padding: "10px 14px", display: "flex", alignItems: "center", gap: 8, marginTop: 12 }}>
-            <span style={{ fontSize: 14 }}>💡</span>
-            <p style={{ fontSize: 11, color: "#3730a3", margin: 0, lineHeight: 1.5 }}>
-              <strong>Study purpose only.</strong> Real booking records are never modified. Demo numbers exist only on-screen while this mode is active.
             </p>
           </div>
         </div>

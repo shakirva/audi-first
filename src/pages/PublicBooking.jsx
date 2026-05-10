@@ -125,30 +125,30 @@ function GallerySection() {
     <div style={{ maxWidth: 900, margin: "0 auto 56px", padding: "0 16px" }}>
 
       {/* Section heading */}
-      <div style={{ textAlign: "center", marginBottom: 28 }}>
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(212,160,23,0.12)", border: "1px solid rgba(212,160,23,0.3)", borderRadius: 20, padding: "5px 16px", marginBottom: 14 }}>
-          <Images size={14} color="#D4A017" />
-          <span style={{ fontSize: 11, fontWeight: 700, color: "#D4A017", letterSpacing: "0.1em", textTransform: "uppercase" }}>Photo &amp; Video Gallery</span>
+      <div style={{ textAlign: "center", marginBottom: 16 }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(212,160,23,0.12)", border: "1px solid rgba(212,160,23,0.3)", borderRadius: 20, padding: "4px 12px", marginBottom: 10 }}>
+          <Images size={12} color="#D4A017" />
+          <span style={{ fontSize: 9, fontWeight: 700, color: "#D4A017", letterSpacing: "0.08em", textTransform: "uppercase" }}>Gallery</span>
         </div>
-        <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 800, color: "#fff", margin: 0 }}>
-          A Glimpse of Our <span style={{ color: "#D4A017" }}>Venue</span>
+        <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 800, color: "#fff", margin: 0 }}>
+          A Glimpse of <span style={{ color: "#D4A017" }}>Our Venue</span>
         </h2>
-        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginTop: 10 }}>
-          Browse through real events hosted at Sreelakshmi Convention Centre
+        <p style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 6, margin: 0 }}>
+          Real events at Sreelakshmi Centre
         </p>
       </div>
 
       {/* Category filter pills */}
-      <div style={{ display: "flex", justifyContent: "center", gap: 8, flexWrap: "wrap", marginBottom: 24 }}>
+      <div style={{ display: "flex", justifyContent: "center", gap: 6, flexWrap: "wrap", marginBottom: 14, overflowX: "auto", paddingBottom: 2 }}>
         {GALLERY_CATEGORIES.map(cat => {
           const active = cat === activeCategory;
           return (
             <button key={cat} onClick={() => setActiveCategory(cat)} style={{
-              padding: "7px 18px", borderRadius: 20, border: `1.5px solid ${active ? "#D4A017" : "rgba(255,255,255,0.2)"}`,
+              padding: "5px 12px", borderRadius: 20, border: `1px solid ${active ? "#D4A017" : "rgba(255,255,255,0.2)"}`,
               background: active ? "#D4A017" : "rgba(255,255,255,0.06)",
               color: active ? "#0D2418" : "rgba(255,255,255,0.7)",
-              fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all 0.15s",
-              fontFamily: "'DM Sans', sans-serif",
+              fontSize: 11, fontWeight: 700, cursor: "pointer", transition: "all 0.15s",
+              fontFamily: "'DM Sans', sans-serif", whiteSpace: "nowrap",
             }}>
               {cat === "Videos" ? "🎬 " : cat === "Halls" ? "🏛️ " : cat === "Events" ? "🎉 " : cat === "Decor" ? "🌸 " : ""}{cat}
             </button>
@@ -159,23 +159,23 @@ function GallerySection() {
       {/* Masonry-style grid */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: "repeat(3, 1fr)",
-        gridAutoRows: "160px",
+        gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))",
+        gridAutoRows: "120px",
         gridAutoFlow: "dense",
-        gap: 10,
+        gap: 8,
       }}>
         {filtered.map((item, i) => (
           <div
             key={i}
             onClick={() => open(i)}
             style={{
-              position: "relative", borderRadius: 14, overflow: "hidden", cursor: "pointer",
-              gridRow: i % 5 === 0 ? "span 2" : "span 1",
+              position: "relative", borderRadius: 10, overflow: "hidden", cursor: "pointer",
+              gridRow: "span 1",
               gridColumn: "span 1",
-              border: "2px solid rgba(255,255,255,0.08)",
+              border: "1px solid rgba(255,255,255,0.08)",
               transition: "transform 0.2s, box-shadow 0.2s",
             }}
-            onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.02)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(0,0,0,0.5)"; e.currentTarget.style.borderColor = "rgba(212,160,23,0.5)"; }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.02)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.5)"; e.currentTarget.style.borderColor = "rgba(212,160,23,0.5)"; }}
             onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
           >
             {/* Thumbnail */}
@@ -192,12 +192,12 @@ function GallerySection() {
             {item.type === "video" && (
               <div style={{
                 position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
-                width: 44, height: 44, borderRadius: "50%",
+                width: 36, height: 36, borderRadius: "50%",
                 background: "rgba(212,160,23,0.9)",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
               }}>
-                <Play size={18} fill="#0D2418" color="#0D2418" style={{ marginLeft: 3 }} />
+                <Play size={14} fill="#0D2418" color="#0D2418" style={{ marginLeft: 2 }} />
               </div>
             )}
 
