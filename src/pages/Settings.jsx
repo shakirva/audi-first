@@ -4,6 +4,7 @@ import { auditoriumInfo } from "../data/dummyData";
 import { useToast } from "../components/Toast";
 import { useRole } from "../context/RoleContext";
 import { useDemo } from "../context/DemoContext";
+import { useBookings } from "../context/BookingsContext";
 
 const INIT_HALLS = [
   { name: "Main Hall",  icon: "🏛️", price: 15000, capacity: 600, description: "Grand ballroom with full AV setup" },
@@ -35,8 +36,10 @@ export default function Settings() {
   const { addToast } = useToast();
   const { role, managerRevenueEnabled, setManagerRevenueEnabled } = useRole();
   const { isDemoMode, toggleDemoMode, demoRatio, setDemoRatio } = useDemo();
+  const { bookings, brotherDefaultVisible, setBrotherDefaultVisible } = useBookings();
   const isOwner = role === "Owner";
   const isAdminRole = role === "Owner" || role === "Manager"; // both see full settings
+  const hiddenFromBrother = bookings.filter((b) => b.showToBrother === false).length;
 
   // ── Venue Info ──
   const [venue, setVenue] = useState({
@@ -204,6 +207,57 @@ export default function Settings() {
             <span style={{ fontSize: 14 }}>💡</span>
             <p style={{ fontSize: 11, color: "#92400e", margin: 0, lineHeight: 1.5 }}>
               Changes take effect immediately. Manager will see or lose access to <strong>Revenue stats, Payments & Reports</strong> on their next page load.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── BROTHER ACCOUNT VISIBILITY (Owner only) ── */}
+      {isOwner && (
+        <div style={{ ...cardSt, border: "1.5px solid #bae6fd", background: "linear-gradient(135deg, #ecfeff, #f0f9ff)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: "#cffafe", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Users size={18} color="#155e75" />
+            </div>
+            <div>
+              <p style={{ ...sectionTitle, color: "#155e75", margin: 0 }}>Brother Account View Control</p>
+              <p style={{ fontSize: 12, color: "#0e7490", margin: 0 }}>Choose what the second account can see (without affecting real data)</p>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderRadius: 12, background: "#fff", border: "1.5px solid #bae6fd", marginBottom: 12 }}>
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 700, color: "#374151", margin: 0 }}>Default visibility for new bookings</p>
+              <p style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>
+                {brotherDefaultVisible ? "New bookings will be visible to Brother" : "New bookings will be hidden from Brother"}
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setBrotherDefaultVisible(!brotherDefaultVisible);
+                addToast(`Brother default changed: ${!brotherDefaultVisible ? "Visible" : "Hidden"}`, "success");
+              }}
+              style={{ background: "none", border: "none", cursor: "pointer", padding: 0, flexShrink: 0 }}
+            >
+              {brotherDefaultVisible ? <ToggleRight size={38} color="#0891b2" /> : <ToggleLeft size={38} color="#9ca3af" />}
+            </button>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div style={{ background: "#fff", border: "1px solid #bae6fd", borderRadius: 10, padding: "10px 12px" }}>
+              <p style={{ fontSize: 10, color: "#6b7280", margin: 0 }}>Total Bookings</p>
+              <p style={{ fontSize: 19, fontWeight: 800, color: "#155e75", margin: "4px 0 0" }}>{bookings.length}</p>
+            </div>
+            <div style={{ background: "#fff", border: "1px solid #bae6fd", borderRadius: 10, padding: "10px 12px" }}>
+              <p style={{ fontSize: 10, color: "#6b7280", margin: 0 }}>Hidden From Brother</p>
+              <p style={{ fontSize: 19, fontWeight: 800, color: "#b91c1c", margin: "4px 0 0" }}>{hiddenFromBrother}</p>
+            </div>
+          </div>
+
+          <div style={{ marginTop: 10, background: "#e0f2fe", borderRadius: 10, padding: "10px 14px", display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 14 }}>ℹ️</span>
+            <p style={{ fontSize: 11, color: "#0c4a6e", margin: 0, lineHeight: 1.45 }}>
+              To hide/show a specific booking, open <strong>Bookings → View</strong> and use <strong>"Visible in Brother Account"</strong> toggle.
             </p>
           </div>
         </div>

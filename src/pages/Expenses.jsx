@@ -115,16 +115,16 @@ export default function Expenses() {
       </div>
 
       {/* ── Month navigator ── */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-        <button onClick={prevMonth} style={{ width: 30, height: 30, borderRadius: 7, border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>‹</button>
-        <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 15, color: "#111827", minWidth: 150, textAlign: "center" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, justifyContent: "center", flexWrap: "wrap" }}>
+        <button onClick={prevMonth} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>‹</button>
+        <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 14, color: "#111827", minWidth: 140, textAlign: "center" }}>
           {MONTHS[filterMonth]} {filterYear}
         </span>
-        <button onClick={nextMonth} style={{ width: 30, height: 30, borderRadius: 7, border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>›</button>
+        <button onClick={nextMonth} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>›</button>
       </div>
 
       {/* ── Summary cards ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 14, marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 20 }}>
         {/* Total */}
         <div style={{ background: "linear-gradient(135deg,#0D2418,#1B4332)", borderRadius: 14, padding: "16px 18px", color: "#fff", gridColumn: "1 / span 2" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
@@ -167,67 +167,106 @@ export default function Expenses() {
       {/* ── Expense Table ── */}
       <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 2px 16px rgba(0,0,0,0.06)", overflow: "hidden" }}>
         {/* Table header */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr 120px 110px 90px", padding: "12px 20px", background: "#f9fafb", borderBottom: "1px solid #f3f4f6" }}>
+        <div style={{ display: "none", gridTemplateColumns: "1fr 2fr 120px 110px 90px", padding: "12px 16px", background: "#f9fafb", borderBottom: "1px solid #f3f4f6", "@media (minWidth: 768px)": { display: "grid" } }}>
           {["Category", "Description", "Amount", "Date", "Actions"].map(h => (
-            <span key={h} style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: 0.5 }}>{h}</span>
+            <span key={h} style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: 0.5 }}>{h}</span>
           ))}
         </div>
 
         {filtered.length === 0 ? (
-          <div style={{ padding: "48px 0", textAlign: "center" }}>
-            <p style={{ fontSize: 32, marginBottom: 8 }}>💰</p>
-            <p style={{ fontSize: 14, color: "#9ca3af" }}>No expenses recorded for this period</p>
-            <button onClick={openAdd} style={{ marginTop: 12, padding: "8px 18px", borderRadius: 8, background: "#1B4332", color: "#fff", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+          <div style={{ padding: "40px 16px", textAlign: "center" }}>
+            <p style={{ fontSize: 28, marginBottom: 8 }}>💰</p>
+            <p style={{ fontSize: 13, color: "#9ca3af" }}>No expenses recorded for this period</p>
+            <button onClick={openAdd} style={{ marginTop: 12, padding: "7px 16px", borderRadius: 8, background: "#1B4332", color: "#fff", border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600 }}>
               + Add First Expense
             </button>
           </div>
         ) : (
-          filtered.map((exp, idx) => {
-            const meta = catMeta(exp.category);
-            const Icon = meta.icon;
-            return (
-              <div key={exp.id} style={{
-                display: "grid", gridTemplateColumns: "1fr 2fr 120px 110px 90px",
-                padding: "13px 20px", borderBottom: idx < filtered.length - 1 ? "1px solid #f9fafb" : "none",
-                alignItems: "center", transition: "background 0.12s",
-              }}
-                onMouseEnter={e => e.currentTarget.style.background = "#fafafa"}
-                onMouseLeave={e => e.currentTarget.style.background = "#fff"}
-              >
-                {/* Category badge */}
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 8, background: meta.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <Icon size={13} style={{ color: meta.color }} />
+          <>
+            {/* Desktop view */}
+            <div style={{ display: "none", "@media (minWidth: 768px)": { display: "block" } }}>
+              {filtered.map((exp, idx) => {
+                const meta = catMeta(exp.category);
+                const Icon = meta.icon;
+                return (
+                  <div key={exp.id} style={{
+                    display: "grid", gridTemplateColumns: "1fr 2fr 120px 110px 90px",
+                    padding: "11px 16px", borderBottom: idx < filtered.length - 1 ? "1px solid #f9fafb" : "none",
+                    alignItems: "center", transition: "background 0.12s",
+                  }}
+                    onMouseEnter={e => e.currentTarget.style.background = "#fafafa"}
+                    onMouseLeave={e => e.currentTarget.style.background = "#fff"}
+                  >
+                    {/* Category badge */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                      <div style={{ width: 26, height: 26, borderRadius: 7, background: meta.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <Icon size={12} style={{ color: meta.color }} />
+                      </div>
+                      <div>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: meta.color }}>{exp.category}</span>
+                        {exp.recurring && <span style={{ display: "block", fontSize: 8, color: "#9ca3af", fontWeight: 600 }}>🔁 recurring</span>}
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    <span style={{ fontSize: 12, color: "#374151", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.description}</span>
+
+                    {/* Amount */}
+                    <span style={{ fontSize: 12, fontWeight: 800, color: "#111827" }}>{formatINR(exp.amount)}</span>
+
+                    {/* Date */}
+                    <span style={{ fontSize: 11, color: "#9ca3af" }}>
+                      {new Date(exp.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit" })}
+                    </span>
+
+                    {/* Actions */}
+                    <div style={{ display: "flex", gap: 5 }}>
+                      <button onClick={() => openEdit(exp)} style={{ width: 26, height: 26, borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7280", fontSize: 11 }}>
+                        <Pencil size={11} />
+                      </button>
+                      <button onClick={() => setDeleteId(exp.id)} style={{ width: 26, height: 26, borderRadius: 6, border: "1px solid #fee2e2", background: "#fff8f8", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#ef4444", fontSize: 11 }}>
+                        <Trash2 size={11} />
+                      </button>
+                    </div>
                   </div>
-                  <div>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: meta.color }}>{exp.category}</span>
-                    {exp.recurring && <span style={{ display: "block", fontSize: 9, color: "#9ca3af", fontWeight: 600 }}>🔁 recurring</span>}
+                );
+              })}
+            </div>
+
+            {/* Mobile card view */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 12, "@media (minWidth: 768px)": { display: "none" } }}>
+              {filtered.map(exp => {
+                const meta = catMeta(exp.category);
+                const Icon = meta.icon;
+                return (
+                  <div key={exp.id} style={{ background: "#f9fafb", borderRadius: 10, padding: 10, border: "1px solid #e5e7eb" }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: 7, background: meta.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <Icon size={14} style={{ color: meta.color }} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ fontSize: 11, fontWeight: 700, color: meta.color, margin: 0 }}>{exp.category}</p>
+                        <p style={{ fontSize: 11, color: "#374151", fontWeight: 500, margin: "2px 0 0" }}>{exp.description}</p>
+                      </div>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: "#1B4332", background: "#F0F4EF", padding: "2px 8px", borderRadius: 6, flexShrink: 0, whiteSpace: "nowrap" }}>{formatINR(exp.amount)}</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10, color: "#9ca3af", marginBottom: 8 }}>
+                      <span>{new Date(exp.date).toLocaleDateString("en-IN", { day: "short", month: "short", year: "2-digit" })}</span>
+                      {exp.recurring && <span>🔁 recurring</span>}
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button onClick={() => openEdit(exp)} style={{ flex: 1, height: 28, borderRadius: 6, border: "1px solid #dbeafe", background: "#eff6ff", cursor: "pointer", fontSize: 10, fontWeight: 600, color: "#2563eb", display: "flex", alignItems: "center", justifyContent: "center", gap: 3 }}>
+                        <Pencil size={11} /> Edit
+                      </button>
+                      <button onClick={() => setDeleteId(exp.id)} style={{ flex: 1, height: 28, borderRadius: 6, border: "1px solid #fee2e2", background: "#fecaca", cursor: "pointer", fontSize: 10, fontWeight: 600, color: "#dc2626", display: "flex", alignItems: "center", justifyContent: "center", gap: 3 }}>
+                        <Trash2 size={11} /> Delete
+                      </button>
+                    </div>
                   </div>
-                </div>
-
-                {/* Description */}
-                <span style={{ fontSize: 13, color: "#374151", fontWeight: 500 }}>{exp.description}</span>
-
-                {/* Amount */}
-                <span style={{ fontSize: 13, fontWeight: 800, color: "#111827" }}>{formatINR(exp.amount)}</span>
-
-                {/* Date */}
-                <span style={{ fontSize: 12, color: "#9ca3af" }}>
-                  {new Date(exp.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
-                </span>
-
-                {/* Actions */}
-                <div style={{ display: "flex", gap: 6 }}>
-                  <button onClick={() => openEdit(exp)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7280" }}>
-                    <Pencil size={12} />
-                  </button>
-                  <button onClick={() => setDeleteId(exp.id)} style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid #fee2e2", background: "#fff8f8", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#ef4444" }}>
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              </div>
-            );
-          })
+                );
+              })}
+            </div>
+          </>
         )}
 
         {/* Total row */}

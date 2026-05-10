@@ -7,7 +7,6 @@ import { bookings as _unused, monthlyRevenue, eventTypes, weekdayBookings, hallU
 import { Download } from "lucide-react";
 import { useToast } from "../components/Toast";
 import { useBookings } from "../context/BookingsContext";
-import { useDemo } from "../context/DemoContext";
 
 const card = { background: "#fff", borderRadius: 16, boxShadow: "0 2px 16px rgba(0,0,0,0.06)", padding: 24 };
 const sTitle = { fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 700, color: "#111827", marginBottom: 16 };
@@ -137,7 +136,6 @@ function downloadHallReport(bookings) {
 export default function Reports() {
   const { addToast } = useToast();
   const { bookings: ctxBookings } = useBookings();
-  const { applyDemo, isDemoMode } = useDemo();
 
   const defaultFrom = `${new Date().getFullYear()}-01-01`;
   const defaultTo = new Date().toISOString().split("T")[0];
@@ -170,14 +168,6 @@ export default function Reports() {
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
-      {/* ── DEMO MODE BANNER ── */}
-      {isDemoMode && (
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 18px", background: "linear-gradient(90deg, #4f46e5, #7c3aed)", borderRadius: 12, marginBottom: 16 }}>
-          <span style={{ fontSize: 16 }}>🎭</span>
-          <p style={{ fontSize: 12, fontWeight: 700, color: "#fff", margin: 0 }}>Demo Mode — Report figures are scaled. Real data unchanged.</p>
-        </div>
-      )}
-
       {/* ── DATE RANGE FILTER ── */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20, flexWrap: "wrap", background: "#fff", borderRadius: 14, padding: "14px 20px", boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
         <span style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>📅 Filter by date:</span>
@@ -203,10 +193,10 @@ export default function Reports() {
       {/* ── SUMMARY STATS ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
         {[
-          { label: "Total Bookings",  value: applyDemo(bookings.length, "count"),     color: "#1B4332", bg: "#f0faf4", icon: "📅" },
-          { label: "Confirmed",       value: applyDemo(confirmed - 1, "count"),        color: "#15803d", bg: "#dcfce7", icon: "✅" },
-          { label: "Total Revenue",   value: `₹${(applyDemo(totalRevenue,"amount")/100000).toFixed(1)}L`, color: "#D4A017", bg: "#fffbeb", icon: "💰" },
-          { label: "Avg. Booking",    value: `₹${applyDemo(Math.round(totalRevenue/confirmed),"amount").toLocaleString()}`, color: "#2563eb", bg: "#eff6ff", icon: "📊" },
+          { label: "Total Bookings",  value: bookings.length,     color: "#1B4332", bg: "#f0faf4", icon: "📅" },
+          { label: "Confirmed",       value: confirmed - 1,        color: "#15803d", bg: "#dcfce7", icon: "✅" },
+          { label: "Total Revenue",   value: `₹${(totalRevenue/100000).toFixed(1)}L`, color: "#D4A017", bg: "#fffbeb", icon: "💰" },
+          { label: "Avg. Booking",    value: `₹${Math.round(totalRevenue/confirmed).toLocaleString()}`, color: "#2563eb", bg: "#eff6ff", icon: "📊" },
         ].map(s => (
           <div key={s.label} style={{ background: s.bg, borderRadius: 14, padding: "16px 20px", display: "flex", alignItems: "center", gap: 12 }}>
             <span style={{ fontSize: 26 }}>{s.icon}</span>

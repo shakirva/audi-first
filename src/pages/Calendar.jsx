@@ -67,35 +67,35 @@ export default function Calendar() {
   };
 
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif", display: "grid", gridTemplateColumns: "1fr 340px", gap: 20, alignItems: "start" }}>
+    <div style={{ fontFamily: "'DM Sans', sans-serif", display: "grid", gridTemplateColumns: "1fr", gap: 16, alignItems: "start" }}>
 
       {/* ── CALENDAR CARD ── */}
       <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 2px 16px rgba(0,0,0,0.06)", overflow: "hidden" }}>
 
         {/* Month nav */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 24px", borderBottom: "1px solid #f3f4f6" }}>
-          <button onClick={prev} style={{ width: 34, height: 34, borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#374151" }}>
-            <ChevronLeft size={16} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid #f3f4f6", flexWrap: "wrap", gap: 8 }}>
+          <button onClick={prev} style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#374151", flexShrink: 0 }}>
+            <ChevronLeft size={14} />
           </button>
-          <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: "#111827" }}>
+          <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, fontWeight: 700, color: "#111827", margin: 0 }}>
             {MONTHS[month]} {year}
           </h2>
-          <button onClick={next} style={{ width: 34, height: 34, borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#374151" }}>
-            <ChevronRight size={16} />
+          <button onClick={next} style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#374151", flexShrink: 0 }}>
+            <ChevronRight size={14} />
           </button>
         </div>
 
         {/* Weekday headers */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", padding: "0 16px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", padding: "8px 12px 4px" }}>
           {WEEKDAYS.map(d => (
-            <div key={d} style={{ textAlign: "center", padding: "10px 0 6px", fontSize: 11, fontWeight: 700, color: d === "Sun" || d === "Sat" ? "#ef4444" : "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            <div key={d} style={{ textAlign: "center", padding: "6px 0", fontSize: 9, fontWeight: 700, color: d === "Sun" || d === "Sat" ? "#ef4444" : "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em" }}>
               {d}
             </div>
           ))}
         </div>
 
         {/* Day cells */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", padding: "0 12px 16px", gap: 3 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", padding: "8px 10px 12px", gap: 2 }}>
           {cells.map((day, i) => {
             if (!day) return <div key={i} />;
             const dayBookings = bookingsOnDay(day);
@@ -108,7 +108,7 @@ export default function Calendar() {
             return (
               <div key={day} onClick={() => setSelected(day === selected ? null : day)}
                 style={{
-                  borderRadius: 10, padding: "6px 4px 8px", cursor: "pointer", minHeight: 62,
+                  borderRadius: 8, padding: "4px 3px 5px", cursor: "pointer", minHeight: 52,
                   background: isSelected ? "#1B4332" : isToday ? "#F0F4EF" : avail.bg,
                   border: isSelected ? "2px solid transparent" : isToday ? `2px solid #1B4332` : `2px solid ${avail.border}`,
                   transition: "all 0.15s",
@@ -117,23 +117,23 @@ export default function Calendar() {
                 onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
               >
                 <div style={{
-                  textAlign: "center", fontSize: 13, fontWeight: isToday ? 800 : 500,
+                  textAlign: "center", fontSize: 11, fontWeight: isToday ? 700 : 500,
                   color: isSelected ? "#fff" : isToday ? "#1B4332" : isWeekend ? "#ef4444" : "#374151",
-                  marginBottom: 4,
+                  marginBottom: 2,
                 }}>
                   {day}
                 </div>
                 {/* Booking dots */}
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 2, justifyContent: "center" }}>
-                  {dayBookings.slice(0, 3).map((b, bi) => (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 1, justifyContent: "center" }}>
+                  {dayBookings.slice(0, 2).map((b, bi) => (
                     <div key={bi} style={{
-                      width: 7, height: 7, borderRadius: "50%",
+                      width: 5, height: 5, borderRadius: "50%",
                       background: isSelected ? "rgba(255,255,255,0.8)" : (hallColorMap[b.hall] || "#1B4332"),
                     }} title={b.customerName} />
                   ))}
-                  {dayBookings.length > 3 && (
-                    <span style={{ fontSize: 9, color: isSelected ? "rgba(255,255,255,0.7)" : "#9ca3af", lineHeight: 1 }}>
-                      +{dayBookings.length - 3}
+                  {dayBookings.length > 2 && (
+                    <span style={{ fontSize: 7, color: isSelected ? "rgba(255,255,255,0.7)" : "#9ca3af", lineHeight: 1 }}>
+                      +{dayBookings.length - 2}
                     </span>
                   )}
                 </div>
@@ -143,41 +143,41 @@ export default function Calendar() {
         </div>
 
         {/* Legend */}
-        <div style={{ padding: "12px 24px", borderTop: "1px solid #f3f4f6", display: "flex", gap: 16, flexWrap: "wrap" }}>
+        <div style={{ padding: "10px 16px", borderTop: "1px solid #f3f4f6", display: "flex", gap: 12, flexWrap: "wrap" }}>
           {[
             { color: "#22c55e", bg: "#dcfce7", label: "Available" },
-            { color: "#eab308", bg: "#fef9c3", label: "Partially Booked" },
-            { color: "#ef4444", bg: "#fee2e2", label: "Fully Booked" },
+            { color: "#eab308", bg: "#fef9c3", label: "Partial" },
+            { color: "#ef4444", bg: "#fee2e2", label: "Full" },
           ].map(item => (
-            <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <div style={{ width: 14, height: 14, borderRadius: 4, background: item.bg, border: `2px solid ${item.color}` }} />
-              <span style={{ fontSize: 11, color: "#6b7280" }}>{item.label}</span>
+            <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <div style={{ width: 10, height: 10, borderRadius: 3, background: item.bg, border: `1.5px solid ${item.color}` }} />
+              <span style={{ fontSize: 10, color: "#6b7280" }}>{item.label}</span>
             </div>
           ))}
         </div>
       </div>
 
       {/* ── SIDE PANEL ── */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
 
         {/* Date info */}
-        <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 2px 16px rgba(0,0,0,0.06)", padding: 20 }}>
+        <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 2px 16px rgba(0,0,0,0.06)", padding: 16 }}>
           {selected ? (
             <>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12, gap: 8 }}>
                 <div>
-                  <p style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, fontWeight: 700, color: "#111827" }}>
+                  <p style={{ fontFamily: "'Playfair Display', serif", fontSize: 14, fontWeight: 700, color: "#111827", margin: 0 }}>
                     {MONTHS[month]} {selected}, {year}
                   </p>
-                  <p style={{ fontSize: 12, color: "#9ca3af", marginTop: 2 }}>
+                  <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>
                     {selectedBookings.length === 0 ? "No bookings" : `${selectedBookings.length} booking${selectedBookings.length > 1 ? "s" : ""}`}
                   </p>
                 </div>
                 <button
                   onClick={() => setShowModal(true)}
-                  style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 8, background: "#1B4332", color: "#fff", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}
+                  style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 12px", borderRadius: 8, background: "#1B4332", color: "#fff", border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, flexShrink: 0 }}
                 >
-                  <Plus size={13} /> Add
+                  <Plus size={12} /> Add
                 </button>
               </div>
 
@@ -189,34 +189,34 @@ export default function Calendar() {
                 selectedBookings.map(b => {
                   const st = STATUS_STYLE[b.status] || STATUS_STYLE.Enquiry;
                   return (
-                    <div key={b.id} style={{ padding: "12px 0", borderBottom: "1px solid #f3f4f6" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-                        <p style={{ fontWeight: 600, fontSize: 13, color: "#111827" }}>{b.customerName}</p>
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 700, background: st.bg, color: st.color, padding: "2px 8px", borderRadius: 12 }}>
-                          <span style={{ width: 5, height: 5, borderRadius: "50%", background: st.dot }} />
+                    <div key={b.id} style={{ padding: "8px 0", borderBottom: "1px solid #f3f4f6" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4, gap: 6 }}>
+                        <p style={{ fontWeight: 600, fontSize: 11, color: "#111827", margin: 0 }}>{b.customerName}</p>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 2, fontSize: 9, fontWeight: 700, background: st.bg, color: st.color, padding: "2px 6px", borderRadius: 10, flexShrink: 0, whiteSpace: "nowrap" }}>
+                          <span style={{ width: 4, height: 4, borderRadius: "50%", background: st.dot }} />
                           {b.status}
                         </span>
                       </div>
-                      <p style={{ fontSize: 11, color: "#6b7280" }}>💍 {b.eventType} · {b.hall}</p>
-                      <p style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>🕐 {b.session} · {b.guests} guests</p>
-                      <p style={{ fontSize: 12, fontWeight: 700, color: "#1B4332", marginTop: 4 }}>₹{b.totalAmount.toLocaleString()}</p>
+                      <p style={{ fontSize: 10, color: "#6b7280", margin: 0 }}>💍 {b.eventType} · {b.hall}</p>
+                      <p style={{ fontSize: 10, color: "#6b7280", marginTop: 1, margin: 0 }}>🕐 {b.session} · {b.guests} guests</p>
+                      <p style={{ fontSize: 11, fontWeight: 700, color: "#1B4332", marginTop: 3, margin: 0 }}>₹{b.totalAmount.toLocaleString()}</p>
                     </div>
                   );
                 })
               )}
             </>
           ) : (
-            <div style={{ textAlign: "center", padding: "32px 0" }}>
-              <p style={{ fontSize: 28, marginBottom: 10 }}>📅</p>
-              <p style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>Select a date</p>
-              <p style={{ fontSize: 12, color: "#9ca3af", marginTop: 4 }}>Click any day to view bookings</p>
+            <div style={{ textAlign: "center", padding: "20px 0" }}>
+              <p style={{ fontSize: 24, marginBottom: 8 }}>📅</p>
+              <p style={{ fontSize: 12, fontWeight: 600, color: "#374151", margin: 0 }}>Select a date</p>
+              <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 3 }}>Click any day to view bookings</p>
             </div>
           )}
         </div>
 
         {/* Monthly summary */}
-        <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 2px 16px rgba(0,0,0,0.06)", padding: 20 }}>
-          <p style={{ fontFamily: "'Playfair Display', serif", fontSize: 14, fontWeight: 700, color: "#111827", marginBottom: 14 }}>
+        <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 2px 16px rgba(0,0,0,0.06)", padding: 16 }}>
+          <p style={{ fontFamily: "'Playfair Display', serif", fontSize: 13, fontWeight: 700, color: "#111827", marginBottom: 12, margin: 0 }}>
             {MONTHS[month]} Summary
           </p>
           {(() => {
@@ -228,9 +228,9 @@ export default function Calendar() {
               { label: "Pending",        value: mb.filter(b => b.status === "Pending Payment").length, color: "#b45309" },
               { label: "Revenue",        value: "₹" + mb.filter(b=>b.status==="Confirmed"||b.status==="Completed").reduce((s,b)=>s+b.totalAmount,0).toLocaleString(), color: "#D4A017" },
             ].map(item => (
-              <div key={item.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                <span style={{ fontSize: 12, color: "#6b7280" }}>{item.label}</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: item.color }}>{item.value}</span>
+              <div key={item.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                <span style={{ fontSize: 11, color: "#6b7280" }}>{item.label}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: item.color }}>{item.value}</span>
               </div>
             ));
           })()}

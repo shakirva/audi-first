@@ -10,7 +10,6 @@ import { monthlyRevenue, eventTypes } from "../data/dummyData";
 import { useNavigate } from "react-router-dom";
 import { useBookings } from "../context/BookingsContext";
 import { useRole } from "../context/RoleContext";
-import { useDemo } from "../context/DemoContext";
 
 const todayStr = new Date().toISOString().split("T")[0];
 const PIE_COLORS = ["#1B4332", "#2D6A4F", "#D4A017", "#40916C", "#74C69D", "#95d5b2"];
@@ -55,7 +54,6 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { bookings } = useBookings();
   const { can } = useRole();
-  const { applyDemo, isDemoMode, demoRatio } = useDemo();
 
   const { from, to } = getDateRange(dateFilter);
   const filtered = bookings.filter((b) => b.date >= from && b.date <= to);
@@ -70,11 +68,6 @@ export default function Dashboard() {
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(0, 6);
 
-  // Apply demo scaling if active
-  const displayRevenue  = applyDemo(totalRevenue, "amount");
-  const displayPending  = applyDemo(pending, "count");
-  const displayToday    = applyDemo(todayBookings.length, "count");
-
   const DATE_FILTERS = ["Today", "Week", "Month", "Year"];
 
   const quickActions = [
@@ -87,21 +80,8 @@ export default function Dashboard() {
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif", maxWidth: 1400 }}>
 
-      {/* ── DEMO MODE BANNER ── */}
-      {isDemoMode && (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 18px", background: "linear-gradient(90deg, #4f46e5, #7c3aed)", borderRadius: 12, marginBottom: 16, gap: 10 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 18 }}>🎭</span>
-            <p style={{ fontSize: 12, fontWeight: 700, color: "#fff", margin: 0 }}>
-              DEMO MODE ACTIVE — Numbers scaled to {Math.round(demoRatio * 100)}% of actual values
-            </p>
-          </div>
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", flexShrink: 0 }}>Disable in Settings → Demo Mode</span>
-        </div>
-      )}
-
       {/* ── DATE FILTER TOGGLE ── */}
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16, gap: 4 }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16, gap: 4, overflowX: "auto", paddingBottom: 8 }}>
         {DATE_FILTERS.map((f) => (
           <button
             key={f}
@@ -113,27 +93,28 @@ export default function Dashboard() {
               color: dateFilter === f ? "#fff" : "#6b7280",
               fontSize: 12, fontWeight: 600, cursor: "pointer",
               fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s",
+              whiteSpace: "nowrap", flexShrink: 0,
             }}
           >{f}</button>
         ))}
       </div>
 
       {/* ── STAT CARDS ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
-        <StatCard title="Total Bookings" value={applyDemo(filtered.length, "count")}  sub={dateFilter}          icon={Calendar}      color="green" trend="+12%" trendUp />
-        {can("canViewRevenue") && <StatCard title="Revenue"       value={`₹${(displayRevenue / 100000).toFixed(1)}L`} sub={isDemoMode ? "Demo View" : "Confirmed"} icon={IndianRupee} color="gold" trend="+8%" trendUp />}
-        {can("canViewRevenue") && <StatCard title="Pending"       value={displayPending}         sub="Awaiting payment"   icon={Clock}         color="red"   trend={`${displayPending} due`} trendUp={false} />}
-        <StatCard title="Customers"       value={applyDemo(new Set(filtered.map((b) => b.phone)).size, "count")} sub="Unique clients" icon={Users}  color="blue"  trend="+5 new" trendUp />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 20, "@media (maxWidth: 640px)": { gridTemplateColumns: "repeat(2, 1fr)" } }}>
+        <StatCard title="Total Bookings" value={filtered.length}  sub={dateFilter}          icon={Calendar}      color="green" trend="+12%" trendUp />
+        {can("canViewRevenue") && <StatCard title="Revenue"       value={`₹${(totalRevenue / 100000).toFixed(1)}L`} sub="Confirmed" icon={IndianRupee} color="gold" trend="+8%" trendUp />}
+        {can("canViewRevenue") && <StatCard title="Pending"       value={pending}         sub="Awaiting payment"   icon={Clock}         color="red"   trend={`${pending} due`} trendUp={false} />}
+        <StatCard title="Customers"       value={new Set(filtered.map((b) => b.phone)).size} sub="Unique clients" icon={Users}  color="blue"  trend="+5 new" trendUp />
       </div>
 
       {/* ── CHARTS ROW ── */}
-      <div style={{ display: "grid", gridTemplateColumns: can("canViewRevenue") ? "1fr 380px" : "1fr", gap: 16, marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16, marginBottom: 20 }}>
 
         {/* Bar Chart — Owner/Manager only */}
         {can("canViewRevenue") && (
         <div style={S.card}>
           <p style={S.sectionTitle}>Monthly Revenue (₹)</p>
-          <ResponsiveContainer width="100%" height={230}>
+          <ResponsiveContainer width="100%" height={280}>
             <BarChart data={monthlyRevenue} barCategoryGap="30%">
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${v / 1000}k`} />
@@ -151,7 +132,7 @@ export default function Dashboard() {
         {/* Pie Chart */}
         <div style={S.card}>
           <p style={S.sectionTitle}>Event Types</p>
-          <ResponsiveContainer width="100%" height={170}>
+          <ResponsiveContainer width="100%" height={220}>
             <PieChart>
               <Pie data={eventTypes} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} innerRadius={42} paddingAngle={3}>
                 {eventTypes.map((_, i) => (
@@ -174,17 +155,17 @@ export default function Dashboard() {
       </div>
 
       {/* ── BOTTOM ROW ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
 
         {/* Today's Events + Upcoming */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
           {/* Today's Events */}
           <div style={S.card}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
               <p style={{ ...S.sectionTitle, marginBottom: 0 }}>Today's Events</p>
               <span style={{ fontSize: 11, fontWeight: 700, background: "#F0F4EF", color: "#1B4332", padding: "3px 12px", borderRadius: 20 }}>
-                {displayToday} booked
+                {todayBookings.length} booked
               </span>
             </div>
             {todayBookings.length === 0 ? (
@@ -194,17 +175,17 @@ export default function Dashboard() {
               </div>
             ) : (
               todayBookings.map((b) => (
-                <div key={b.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: "1px solid #f3f4f6" }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 12, background: "#F0F4EF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>
+                <div key={b.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 0", borderBottom: "1px solid #f3f4f6", flexWrap: "wrap" }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: "#F0F4EF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
                     {b.eventType === "Wedding" ? "💍" : b.eventType === "Conference" ? "💼" : b.eventType === "Birthday" ? "🎂" : "🎉"}
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontWeight: 600, fontSize: 13, color: "#111827" }}>{b.customerName}</p>
-                    <p style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>{b.eventType} · {b.session} · {b.hall}</p>
+                  <div style={{ flex: 1, minWidth: 150 }}>
+                    <p style={{ fontWeight: 600, fontSize: 12, color: "#111827" }}>{b.customerName}</p>
+                    <p style={{ fontSize: 10, color: "#6b7280", marginTop: 1 }}>{b.eventType} · {b.session} · {b.hall}</p>
                   </div>
                   <div style={{ textAlign: "right" }}>
-                    <p style={{ fontSize: 12, fontWeight: 700, color: "#1B4332" }}>{b.guests} guests</p>
-                    {can("canViewRevenue") && <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 1 }}>₹{b.totalAmount.toLocaleString()}</p>}
+                    <p style={{ fontSize: 11, fontWeight: 700, color: "#1B4332" }}>{b.guests} guests</p>
+                    {can("canViewRevenue") && <p style={{ fontSize: 10, color: "#9ca3af", marginTop: 1 }}>₹{b.totalAmount.toLocaleString()}</p>}
                   </div>
                 </div>
               ))
@@ -216,20 +197,20 @@ export default function Dashboard() {
             <p style={S.sectionTitle}>Upcoming Bookings</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
               {upcoming.map((b, idx) => (
-                <div key={b.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: idx < upcoming.length - 1 ? "1px solid #f3f4f6" : "none" }}>
-                  <div style={{ textAlign: "center", minWidth: 40, background: "#F0F4EF", borderRadius: 10, padding: "6px 8px", flexShrink: 0 }}>
-                    <p style={{ fontSize: 16, fontWeight: 800, color: "#1B4332", lineHeight: 1 }}>{new Date(b.date).getDate()}</p>
-                    <p style={{ fontSize: 9, color: "#6b7280", textTransform: "uppercase", fontWeight: 600 }}>
+                <div key={b.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 0", borderBottom: idx < upcoming.length - 1 ? "1px solid #f3f4f6" : "none", flexWrap: "wrap" }}>
+                  <div style={{ textAlign: "center", minWidth: 38, background: "#F0F4EF", borderRadius: 8, padding: "4px 6px", flexShrink: 0 }}>
+                    <p style={{ fontSize: 14, fontWeight: 800, color: "#1B4332", lineHeight: 1 }}>{new Date(b.date).getDate()}</p>
+                    <p style={{ fontSize: 8, color: "#6b7280", textTransform: "uppercase", fontWeight: 600 }}>
                       {new Date(b.date).toLocaleString("en", { month: "short" })}
                     </p>
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontWeight: 600, fontSize: 13, color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.customerName}</p>
-                    <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>{b.eventType} · {b.hall}</p>
+                  <div style={{ flex: 1, minWidth: 140 }}>
+                    <p style={{ fontWeight: 600, fontSize: 12, color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.customerName}</p>
+                    <p style={{ fontSize: 10, color: "#9ca3af", marginTop: 1 }}>{b.eventType} · {b.hall}</p>
                   </div>
                   {can("canViewRevenue") && (
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "#1B4332", background: "#F0F4EF", padding: "3px 10px", borderRadius: 8, flexShrink: 0 }}>
-                    ₹{b.totalAmount.toLocaleString()}
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#1B4332", background: "#F0F4EF", padding: "2px 8px", borderRadius: 6, flexShrink: 0 }}>
+                    ₹{(b.totalAmount / 1000).toFixed(0)}k
                   </span>
                   )}
                 </div>
@@ -241,7 +222,7 @@ export default function Dashboard() {
         {/* Quick Actions */}
         <div style={S.card}>
           <p style={S.sectionTitle}>Quick Actions</p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 10 }}>
             {quickActions.filter(a => !a.permission || can(a.permission)).map((a) => (
               <button
                 key={a.label}

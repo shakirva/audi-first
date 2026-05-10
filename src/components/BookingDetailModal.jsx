@@ -2,7 +2,6 @@ import { useState } from "react";
 import { X, FileText, MessageCircle, Pencil, XCircle } from "lucide-react";
 import { useToast } from "./Toast";
 import { useBookings } from "../context/BookingsContext";
-import { calcGST } from "../utils/gst";
 
 const STATUS_FLOW = {
   Enquiry:          { next: "Confirmed",  label: "✅ Confirm Booking",  color: "#15803d", bg: "#dcfce7" },
@@ -28,13 +27,12 @@ const EVENT_ICON = {
 
 export default function BookingDetailModal({ booking: initialBooking, onClose, onInvoice, onEdit }) {
   const { addToast } = useToast();
-  const { updateStatus, toggleGst } = useBookings();
+  const { updateStatus } = useBookings();
   const [booking, setBooking] = useState(initialBooking);
   if (!booking) return null;
 
   const advance = Number(booking.advance ?? booking.advancePaid ?? 0);
-  const gst     = calcGST(booking.totalAmount, booking.gstApplicable !== false);
-  const balance = gst.grandTotal - advance;
+  const balance = booking.totalAmount - advance;
 
   const formattedDate = (() => {
     try { return new Date(booking.date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }); }
@@ -58,7 +56,7 @@ export default function BookingDetailModal({ booking: initialBooking, onClose, o
 
   const handleWhatsApp = () => {
     const msg = encodeURIComponent(
-      `Dear ${booking.customerName},\n\nYour booking at our auditorium is confirmed! 🎉\n\n📅 Date: ${formattedDate}\n🏛️ Hall: ${booking.hall}\n⏰ Session: ${booking.session}\n👥 Guests: ${booking.guests}\n💰 Total: ₹${gst.grandTotal.toLocaleString()}${booking.gstApplicable !== false ? " (incl. GST 18%)" : " (GST Exempt)"}\n✅ Advance: ₹${advance.toLocaleString()}\n⚠️ Balance Due: ₹${balance.toLocaleString()}\n\nThank you for choosing us! 🙏`
+      `Dear ${booking.customerName},\n\nYour booking at our auditorium is confirmed! 🎉\n\n📅 Date: ${formattedDate}\n🏛️ Hall: ${booking.hall}\n⏰ Session: ${booking.session}\n👥 Guests: ${booking.guests}\n💰 Total: ₹${booking.totalAmount.toLocaleString()}\n✅ Advance: ₹${advance.toLocaleString()}\n⚠️ Balance Due: ₹${balance.toLocaleString()}\n\nThank you for choosing us! 🙏`
     );
     window.open(`https://wa.me/91${booking.phone}?text=${msg}`, "_blank");
   };
@@ -155,30 +153,9 @@ export default function BookingDetailModal({ booking: initialBooking, onClose, o
           <div style={{ background: "#f0faf4", borderRadius: 14, padding: "14px 16px", border: "1px solid #bbf7d0", marginBottom: 20 }}>
             <p style={{ fontSize: 10, fontWeight: 800, color: "#1B4332", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 10 }}>Payment Summary</p>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-              <span style={{ fontSize: 13, color: "#374151" }}>Base Amount</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>₹{gst.base.toLocaleString()}</span>
+              <span style={{ fontSize: 13, color: "#374151" }}>Total Amount</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#111827" }}>₹{booking.totalAmount.toLocaleString()}</span>
             </div>
-            {booking.gstApplicable !== false ? (
-              <>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                  <span style={{ fontSize: 12, color: "#92400e" }}>CGST @ 9%</span>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "#92400e" }}>+ ₹{gst.cgst.toLocaleString()}</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                  <span style={{ fontSize: 12, color: "#92400e" }}>SGST @ 9%</span>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "#92400e" }}>+ ₹{gst.sgst.toLocaleString()}</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, paddingTop: 6, borderTop: "1px dashed #fed7aa" }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#111827" }}>Grand Total (incl. GST)</span>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: "#111827" }}>₹{gst.grandTotal.toLocaleString()}</span>
-                </div>
-              </>
-            ) : (
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                <span style={{ fontSize: 12, color: "#15803d" }}>GST Exempt (Nil Rated)</span>
-                <span style={{ fontSize: 12, fontWeight: 600, color: "#15803d" }}>₹0</span>
-              </div>
-            )}
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
               <span style={{ fontSize: 13, color: "#15803d" }}>Advance Paid</span>
               <span style={{ fontSize: 13, fontWeight: 700, color: "#15803d" }}>₹{advance.toLocaleString()}</span>
@@ -190,21 +167,6 @@ export default function BookingDetailModal({ booking: initialBooking, onClose, o
               <span style={{ fontSize: 14, fontWeight: 800, color: balance > 0 ? "#b91c1c" : "#15803d" }}>
                 ₹{balance.toLocaleString()}
               </span>
-            </div>
-          </div>
-
-          {/* ── GST TOGGLE ── */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", background: booking.gstApplicable !== false ? "#fffbeb" : "#f0fdf4", border: `1px solid ${booking.gstApplicable !== false ? "#fed7aa" : "#bbf7d0"}`, borderRadius: 12, marginBottom: 10 }}>
-            <div>
-              <p style={{ fontSize: 12, fontWeight: 700, color: booking.gstApplicable !== false ? "#92400e" : "#15803d", margin: 0 }}>
-                {booking.gstApplicable !== false ? "⚡ GST Applicable @ 18%" : "✅ GST Exempt / Nil Rated"}
-              </p>
-              <p style={{ fontSize: 10, color: "#6b7280", marginTop: 3 }}>SAC: 997212 · Toggle to change GST status</p>
-            </div>
-            <div
-              onClick={() => { toggleGst(booking.id); setBooking(b => ({ ...b, gstApplicable: b.gstApplicable === false ? true : false })); }}
-              style={{ width: 42, height: 24, borderRadius: 12, background: booking.gstApplicable !== false ? "#1B4332" : "#d1d5db", cursor: "pointer", position: "relative", transition: "background 0.2s", flexShrink: 0 }}>
-              <div style={{ position: "absolute", top: 3, left: booking.gstApplicable !== false ? 21 : 3, width: 18, height: 18, borderRadius: "50%", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
             </div>
           </div>
 
