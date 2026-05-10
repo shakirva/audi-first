@@ -12,6 +12,11 @@ export function RoleProvider({ children }) {
     () => localStorage.getItem("hm_mgr_revenue") !== "false"
   );
 
+  // Owner-controlled toggle: show/hide test bookings in reports & counts
+  const [hideTestBookings, setHideTestBookingsState] = useState(
+    () => localStorage.getItem("hm_hide_test_bookings") === "true"
+  );
+
   const login = (selectedRole, password) => {
     if (CREDENTIALS[selectedRole] && CREDENTIALS[selectedRole] === password) {
       localStorage.setItem("hm_role", selectedRole);
@@ -35,6 +40,11 @@ export function RoleProvider({ children }) {
     setManagerRevenueEnabledState(val);
   };
 
+  const setHideTestBookings = (val) => {
+    localStorage.setItem("hm_hide_test_bookings", val ? "true" : "false");
+    setHideTestBookingsState(val);
+  };
+
   const can = (permission) => {
     // Owner can override Manager's revenue-related access
     if (role === "Manager" && !managerRevenueEnabled) {
@@ -46,7 +56,7 @@ export function RoleProvider({ children }) {
   };
 
   return (
-    <RoleContext.Provider value={{ role, isLoggedIn, login, logout, can, managerRevenueEnabled, setManagerRevenueEnabled }}>
+    <RoleContext.Provider value={{ role, isLoggedIn, login, logout, can, managerRevenueEnabled, setManagerRevenueEnabled, hideTestBookings, setHideTestBookings }}>
       {children}
     </RoleContext.Provider>
   );

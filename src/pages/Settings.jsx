@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Save, Building2, User, MapPin, IndianRupee, Users, CheckCircle, X, Copy, Link, ShieldCheck, ImagePlus, Trash2, Play, Film, ToggleLeft, ToggleRight, Eye, EyeOff } from "lucide-react";
+import { Save, Building2, User, MapPin, IndianRupee, Users, CheckCircle, X, Copy, Link, ShieldCheck, ImagePlus, Trash2, Play, Film, ToggleLeft, ToggleRight, Eye, EyeOff, Trash } from "lucide-react";
 import { auditoriumInfo } from "../data/dummyData";
 import { useToast } from "../components/Toast";
 import { useRole } from "../context/RoleContext";
+import { useBookings } from "../context/BookingsContext";
 
 const INIT_HALLS = [
   { name: "Main Hall",  icon: "🏛️", price: 15000, capacity: 600, description: "Grand ballroom with full AV setup" },
@@ -33,8 +34,21 @@ const sectionTitle = {
 export default function Settings() {
   const { addToast } = useToast();
   const { role, managerRevenueEnabled, setManagerRevenueEnabled } = useRole();
+  const { bookings, deleteBooking } = useBookings();
   const isOwner = role === "Owner";
   const isAdminRole = role === "Owner" || role === "Manager"; // both see full settings
+
+  // ── Test Bookings Management ──
+  const testBookings = bookings.filter(b => b.customerName?.toUpperCase().includes("TEST") || b.customerName?.toUpperCase().includes("FAKE") || b.customerName?.toUpperCase().includes("DEMO"));
+
+  const handleDeleteTestBookings = () => {
+    if (testBookings.length === 0) {
+      addToast("No test bookings found! ✨", "info");
+      return;
+    }
+    testBookings.forEach(b => deleteBooking(b.id));
+    addToast(`Deleted ${testBookings.length} test booking${testBookings.length !== 1 ? "s" : ""}! 🗑️`, "success");
+  };
 
   // ── Venue Info ──
   const [venue, setVenue] = useState({
@@ -202,6 +216,95 @@ export default function Settings() {
             <span style={{ fontSize: 14 }}>💡</span>
             <p style={{ fontSize: 11, color: "#92400e", margin: 0, lineHeight: 1.5 }}>
               Changes take effect immediately. Manager will see or lose access to <strong>Revenue stats, Payments & Reports</strong> on their next page load.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── TEST BOOKINGS MANAGEMENT (Owner only) ── */}
+      {isOwner && (
+        <div style={{ ...cardSt, border: "1.5px solid #fecaca", background: "linear-gradient(135deg, #fef2f2, #fefbfb)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: "#fee2e2", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Trash size={18} color="#C0392B" />
+            </div>
+            <div>
+              <p style={{ ...sectionTitle, color: "#991b1b" }}>Test & Demo Bookings</p>
+              <p style={{ fontSize: 12, color: "#b91c1c", margin: 0 }}>Remove fake bookings created for testing</p>
+            </div>
+          </div>
+
+          {/* Test bookings info */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderRadius: 12, background: "#fff", border: "1.5px solid #fecaca", marginBottom: 12 }}>
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 700, color: "#374151", margin: 0 }}>Found {testBookings.length} test booking{testBookings.length !== 1 ? "s" : ""}</p>
+              <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 3 }}>
+                {testBookings.length === 0
+                  ? "No test bookings detected. All bookings look legitimate! ✨"
+                  : `Bookings with "TEST", "FAKE", or "DEMO" in customer name will be removed`}
+              </p>
+            </div>
+          </div>
+
+          {/* List of test bookings if any exist */}
+          {testBookings.length > 0 && (
+            <div style={{ background: "#fef2f2", borderRadius: 10, padding: "12px", marginBottom: 12, maxHeight: 200, overflowY: "auto" }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: "#991b1b", textTransform: "uppercase", letterSpacing: "0.07em", margin: "0 0 8px 0" }}>
+                🧪 Test Bookings to be deleted:
+              </p>
+              {testBookings.map(b => (
+                <div key={b.id} style={{ fontSize: 11, color: "#7f1d1d", padding: "6px 8px", background: "#fff", borderRadius: 6, marginBottom: 6, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span>
+                    <strong>{b.customerName}</strong> - {b.eventType} ({b.date})
+                  </span>
+                  <span style={{ fontSize: 9, background: "#fecaca", color: "#991b1b", padding: "2px 6px", borderRadius: 4, fontWeight: 600 }}>
+                    {b.id}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Delete button */}
+          <button
+            onClick={handleDeleteTestBookings}
+            style={{
+              width: "100%",
+              padding: "12px 16px",
+              borderRadius: 12,
+              border: "none",
+              background: testBookings.length === 0 ? "#e5e7eb" : "#dc2626",
+              color: testBookings.length === 0 ? "#9ca3af" : "#fff",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: testBookings.length === 0 ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              transition: "all 0.2s",
+              fontFamily: "'DM Sans', sans-serif",
+            }}
+            onMouseEnter={e => {
+              if (testBookings.length > 0) {
+                e.target.style.background = "#b91c1c";
+              }
+            }}
+            onMouseLeave={e => {
+              if (testBookings.length > 0) {
+                e.target.style.background = "#dc2626";
+              }
+            }}
+            disabled={testBookings.length === 0}
+          >
+            <Trash size={16} />
+            Delete All Test Bookings
+          </button>
+
+          <div style={{ background: "#fee2e2", borderRadius: 10, padding: "10px 14px", display: "flex", alignItems: "center", gap: 8, marginTop: 12 }}>
+            <span style={{ fontSize: 14 }}>⚠️</span>
+            <p style={{ fontSize: 11, color: "#991b1b", margin: 0, lineHeight: 1.5 }}>
+              This action will <strong>permanently delete</strong> all bookings with "TEST", "FAKE", or "DEMO" in the customer name. This cannot be undone.
             </p>
           </div>
         </div>
