@@ -120,7 +120,7 @@ export default function Bookings() {
       {/* ── TABLE / CARD VIEW ── */}
       <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 2px 16px rgba(0,0,0,0.06)", overflow: "hidden" }}>
         {/* Desktop Table View */}
-        <div style={{ display: "none", overflowX: "auto", "@media (minWidth: 768px)": { display: "block" } }}>
+        <div className="hm-desktop-only" style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "#f9fafb", borderBottom: "1px solid #f3f4f6" }}>
@@ -223,7 +223,8 @@ export default function Bookings() {
         </div>
 
         {/* Mobile Card View */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 12 }}>
+        <div className="hm-mobile-only" style={{ padding: 12 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {filtered.length === 0 ? (
             <div style={{ textAlign: "center", padding: "40px 20px", color: "#9ca3af", fontSize: 13 }}>
               No bookings found
@@ -273,6 +274,7 @@ export default function Bookings() {
               );
             })
           )}
+          </div>
         </div>
 
         {/* Footer */}

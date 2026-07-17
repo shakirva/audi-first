@@ -1,22 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from "recharts";
-import { Calendar, Users, IndianRupee, Clock } from "lucide-react";
+import { Calendar, Users, IndianRupee, Clock, MessageCircle, Database } from "lucide-react";
 import StatCard from "../components/StatCard";
 import BookingModal from "../components/BookingModal";
-import { monthlyRevenue, eventTypes } from "../data/dummyData";
 import { useNavigate } from "react-router-dom";
 import { useBookings } from "../context/BookingsContext";
 import { useRole } from "../context/RoleContext";
+import { bookingsAPI } from "../services/api";
 
 const todayStr = new Date().toISOString().split("T")[0];
 const PIE_COLORS = ["#1B4332", "#2D6A4F", "#D4A017", "#40916C", "#74C69D", "#95d5b2"];
 
 function getDateRange(filter) {
   const now = new Date();
-  const pad = (d) => d.toISOString().split("T")[0];
+  const pad = (d) => { const x = new Date(d); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().split("T")[0]; };
+  
   if (filter === "Today") return { from: pad(now), to: pad(now) };
   if (filter === "Week") {
     const mon = new Date(now); mon.setDate(now.getDate() - now.getDay() + 1);
@@ -31,6 +32,35 @@ function getDateRange(filter) {
   const lastDay = new Date(y, now.getMonth() + 1, 0).getDate();
   return { from: `${y}-${m}-01`, to: `${y}-${m}-${lastDay}` };
 }
+
+function getPrevDateRange(filter) {
+  const now = new Date();
+  const pad = (d) => { const x = new Date(d); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().split("T")[0]; };
+
+  if (filter === "Today") {
+    const yest = new Date(now); yest.setDate(yest.getDate() - 1);
+    return { from: pad(yest), to: pad(yest) };
+  }
+  if (filter === "Week") {
+    const prevMon = new Date(now); prevMon.setDate(now.getDate() - now.getDay() + 1 - 7);
+    const prevSun = new Date(prevMon); prevSun.setDate(prevMon.getDate() + 6);
+    return { from: pad(prevMon), to: pad(prevSun) };
+  }
+  if (filter === "Year") {
+    return { from: `${now.getFullYear()-1}-01-01`, to: `${now.getFullYear()-1}-12-31` };
+  }
+  // Month
+  const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, "0");
+  const lastDay = new Date(y, d.getMonth() + 1, 0).getDate();
+  return { from: `${y}-${m}-01`, to: `${y}-${m}-${lastDay}` };
+}
+
+const calcTrend = (curr, prev) => {
+  if (prev === 0) return curr > 0 ? "+100%" : "0%";
+  const pct = Math.round(((curr - prev) / prev) * 100);
+  return pct >= 0 ? `+${pct}%` : `${pct}%`;
+};
 
 const S = {
   card: {
@@ -51,24 +81,71 @@ const S = {
 export default function Dashboard() {
   const [showModal, setShowModal] = useState(false);
   const [dateFilter, setDateFilter] = useState("Month");
+  const [comparisonStats, setComparisonStats] = useState(null);
   const navigate = useNavigate();
   const { bookings } = useBookings();
-  const { can } = useRole();
+  const { can, role } = useRole();
+
+  useEffect(() => {
+    if (role === "Owner" || role === "SuperAdmin") {
+      bookingsAPI.getComparisonStats()
+        .then(res => setComparisonStats(res.data))
+        .catch(err => console.error(err));
+    }
+  }, [role]);
 
   const { from, to } = getDateRange(dateFilter);
-  const filtered = bookings.filter((b) => b.date >= from && b.date <= to);
+  const { from: prevFrom, to: prevTo } = getPrevDateRange(dateFilter);
+
+  const getDs = (d) => (d ? d.split("T")[0] : "");
+
+  const filtered = bookings.filter((b) => getDs(b.date) >= from && getDs(b.date) <= to);
+  const prevFiltered = bookings.filter((b) => getDs(b.date) >= prevFrom && getDs(b.date) <= prevTo);
 
   const pending = filtered.filter((b) => b.status === "Pending Payment").length;
   const totalRevenue = filtered
     .filter((b) => b.status === "Confirmed" || b.status === "Completed")
-    .reduce((s, b) => s + b.totalAmount, 0);
-  const todayBookings = bookings.filter((b) => b.date === todayStr);
+    .reduce((s, b) => s + Number(b.totalAmount || 0), 0);
+    
+  const prevRevenue = prevFiltered
+    .filter((b) => b.status === "Confirmed" || b.status === "Completed")
+    .reduce((s, b) => s + Number(b.totalAmount || 0), 0);
+
+  const customersCount = new Set(filtered.map((b) => b.phone)).size;
+  const prevCustomersCount = new Set(prevFiltered.map((b) => b.phone)).size;
+
+  const todayBookings = bookings.filter((b) => getDs(b.date) === todayStr);
   const upcoming = [...bookings]
-    .filter((b) => b.date >= todayStr && b.status !== "Cancelled")
-    .sort((a, b) => a.date.localeCompare(b.date))
+    .filter((b) => getDs(b.date) >= todayStr && b.status !== "Cancelled")
+    .sort((a, b) => getDs(a.date).localeCompare(getDs(b.date)))
     .slice(0, 6);
 
   const DATE_FILTERS = ["Today", "Week", "Month", "Year"];
+
+  // Compute Event Types
+  const eventTypeMap = {};
+  filtered.forEach(b => {
+    eventTypeMap[b.eventType] = (eventTypeMap[b.eventType] || 0) + 1;
+  });
+  const eventTypes = Object.keys(eventTypeMap).map(k => ({ name: k, value: eventTypeMap[k] }));
+
+  // Compute Monthly Revenue (for the past 6 months based on bookings)
+  const revenueMap = {};
+  bookings.forEach(b => {
+    if (b.status === "Confirmed" || b.status === "Completed") {
+      const monthStr = new Date(getDs(b.date)).toLocaleString('default', { month: 'short' });
+      revenueMap[monthStr] = (revenueMap[monthStr] || 0) + Number(b.totalAmount || 0);
+    }
+  });
+  
+  // Create an array of the last 6 months
+  const monthlyRevenue = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    const m = d.toLocaleString('default', { month: 'short' });
+    monthlyRevenue.push({ month: m, revenue: revenueMap[m] || 0 });
+  }
 
   const quickActions = [
     { label: "New Booking", emoji: "📅", color: "#1B4332", onClick: () => setShowModal(true),       permission: "canAddBooking" },
@@ -100,21 +177,23 @@ export default function Dashboard() {
       </div>
 
       {/* ── STAT CARDS ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 20, "@media (maxWidth: 640px)": { gridTemplateColumns: "repeat(2, 1fr)" } }}>
-        <StatCard title="Total Bookings" value={filtered.length}  sub={dateFilter}          icon={Calendar}      color="green" trend="+12%" trendUp />
-        {can("canViewRevenue") && <StatCard title="Revenue"       value={`₹${(totalRevenue / 100000).toFixed(1)}L`} sub="Confirmed" icon={IndianRupee} color="gold" trend="+8%" trendUp />}
+      <div className="hm-stat-grid">
+        <StatCard title="Total Bookings" value={filtered.length}  sub={dateFilter}          icon={Calendar}      color="green" trend={calcTrend(filtered.length, prevFiltered.length)} trendUp={filtered.length >= prevFiltered.length} />
+        {can("canViewRevenue") && <StatCard title="Revenue"       value={`₹${(totalRevenue / 1000).toFixed(1)}k`} sub="Confirmed" icon={IndianRupee} color="gold" trend={calcTrend(totalRevenue, prevRevenue)} trendUp={totalRevenue >= prevRevenue} />}
         {can("canViewRevenue") && <StatCard title="Pending"       value={pending}         sub="Awaiting payment"   icon={Clock}         color="red"   trend={`${pending} due`} trendUp={false} />}
-        <StatCard title="Customers"       value={new Set(filtered.map((b) => b.phone)).size} sub="Unique clients" icon={Users}  color="blue"  trend="+5 new" trendUp />
+        <StatCard title="Customers"       value={customersCount} sub="Unique clients" icon={Users}  color="blue"  trend={`${customersCount - prevCustomersCount >= 0 ? "+" : ""}${customersCount - prevCustomersCount} new`} trendUp={customersCount >= prevCustomersCount} />
       </div>
 
-      {/* ── CHARTS ROW ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16, marginBottom: 20 }}>
+      {/* ── DASHBOARD MAIN (FLEX WRAPPER FOR MOBILE ORDERING) ── */}
+      <div className="hm-dashboard-main">
+        {/* ── CHARTS ROW ── */}
+        <div className="hm-charts-grid">
 
         {/* Bar Chart — Owner/Manager only */}
         {can("canViewRevenue") && (
         <div style={S.card}>
           <p style={S.sectionTitle}>Monthly Revenue (₹)</p>
-          <ResponsiveContainer width="100%" height={280}>
+          <ResponsiveContainer width="100%" height={280} className="hm-mobile-chart">
             <BarChart data={monthlyRevenue} barCategoryGap="30%">
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${v / 1000}k`} />
@@ -155,7 +234,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── BOTTOM ROW ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+      <div className="hm-bottom-grid">
 
         {/* Today's Events + Upcoming */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -276,9 +355,138 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
+
+          {/* Sandbox vs Production Comparison (Owner/SuperAdmin only) */}
+          {comparisonStats && (
+            <div style={{ marginTop: 20, paddingTop: 20, borderTop: "1px solid #f3f4f6" }}>
+              <p style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "#1B4332", marginBottom: 14, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                <Database size={14} /> Environment Overview
+              </p>
+              
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                {/* Production */}
+                <div style={{ background: "#f0fdf4", padding: "12px", borderRadius: 10, border: "1px solid #bbf7d0" }}>
+                  <p style={{ fontSize: 10, fontWeight: 700, color: "#166534", margin: "0 0 6px 0", textTransform: "uppercase" }}>Production</p>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, color: "#6b7280" }}>Revenue</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "#1B4332" }}>₹{(comparisonStats.production.revenue / 1000).toFixed(1)}k</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: 11, color: "#6b7280" }}>Bookings</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "#1B4332" }}>{comparisonStats.production.bookings}</span>
+                  </div>
+                </div>
+
+                {/* Sandbox */}
+                <div style={{ background: "#fffbeb", padding: "12px", borderRadius: 10, border: "1px solid #fde68a" }}>
+                  <p style={{ fontSize: 10, fontWeight: 700, color: "#b45309", margin: "0 0 6px 0", textTransform: "uppercase" }}>Sandbox</p>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, color: "#6b7280" }}>Revenue</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "#b45309" }}>₹{(comparisonStats.sandbox.revenue / 1000).toFixed(1)}k</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: 11, color: "#6b7280" }}>Bookings</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "#b45309" }}>{comparisonStats.sandbox.bookings}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
       </div>
+
+      {/* ── WHATSAPP FOLLOW-UP REMINDERS ── */}
+      {(() => {
+        const threeDaysAgo = new Date();
+        threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+        const threeDaysAgoStr = threeDaysAgo.toISOString().split("T")[0];
+
+        const followUps = bookings.filter(b =>
+          (b.status === "Enquiry" || b.status === "Pending Payment") &&
+          b.createdAt && b.createdAt.split("T")[0] <= threeDaysAgoStr
+        );
+
+        // Also include bookings without createdAt but with old dates
+        const followUpsByDate = bookings.filter(b =>
+          (b.status === "Enquiry" || b.status === "Pending Payment") &&
+          !b.createdAt && getDs(b.date) <= threeDaysAgoStr
+        );
+
+        const allFollowUps = [...followUps, ...followUpsByDate];
+
+        if (allFollowUps.length === 0) return null;
+
+        const getWhatsAppUrl = (b) => {
+          const msg = b.status === "Enquiry"
+            ? `Hi ${b.customerName.split(" ")[0]}, this is from Sreelakshmi Convention Centre. You had enquired about our ${b.hall} for your ${b.eventType} on ${b.date}. Would you like to confirm the booking? We'd be happy to assist! 🏛️`
+            : `Hi ${b.customerName.split(" ")[0]}, this is from Sreelakshmi Convention Centre. Your booking for ${b.eventType} on ${b.date} at ${b.hall} has a pending payment of ₹${(b.totalAmount - b.advance).toLocaleString()}. Kindly complete the payment at your earliest convenience. Thank you! 🙏`;
+          const phone = b.phone.replace(/[^0-9]/g, "");
+          const fullPhone = phone.startsWith("91") ? phone : `91${phone}`;
+          return `https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`;
+        };
+
+        return (
+          <div style={{ ...S.card, border: "1.5px solid #bbf7d0", background: "linear-gradient(135deg, #f0fdf4, #fefffe)", marginTop: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: "#dcfce7", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <MessageCircle size={18} color="#15803d" />
+              </div>
+              <div>
+                <p style={{ ...S.sectionTitle, marginBottom: 0, color: "#15803d" }}>WhatsApp Follow-Up</p>
+                <p style={{ fontSize: 11, color: "#6b7280", margin: 0 }}>{allFollowUps.length} booking{allFollowUps.length !== 1 ? "s" : ""} need follow-up (3+ days old)</p>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {allFollowUps.slice(0, 5).map(b => {
+                const statusColor = b.status === "Enquiry" ? { bg: "#dbeafe", color: "#1d4ed8", dot: "#3b82f6" }
+                  : { bg: "#fef3c7", color: "#92400e", dot: "#f59e0b" };
+                return (
+                  <div key={b.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: "#fff", border: "1px solid #e5e7eb" }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                        <p style={{ fontSize: 12, fontWeight: 700, color: "#111827", margin: 0 }}>{b.customerName}</p>
+                        <span style={{ fontSize: 9, fontWeight: 700, background: statusColor.bg, color: statusColor.color, padding: "1px 6px", borderRadius: 8, display: "inline-flex", alignItems: "center", gap: 3 }}>
+                          <span style={{ width: 4, height: 4, borderRadius: "50%", background: statusColor.dot }} />
+                          {b.status}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: 10, color: "#6b7280", margin: 0 }}>{b.eventType} · {b.hall} · {b.date}</p>
+                    </div>
+                    <a
+                      href={getWhatsAppUrl(b)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: "flex", alignItems: "center", gap: 5,
+                        padding: "7px 14px", borderRadius: 8, border: "none",
+                        background: "#25D366", color: "#fff",
+                        fontSize: 11, fontWeight: 700, textDecoration: "none",
+                        cursor: "pointer", flexShrink: 0,
+                        transition: "all 0.15s",
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = "#1da851"}
+                      onMouseLeave={e => e.currentTarget.style.background = "#25D366"}
+                    >
+                      <MessageCircle size={13} /> Send
+                    </a>
+                  </div>
+                );
+              })}
+            </div>
+
+            {allFollowUps.length > 5 && (
+              <p style={{ fontSize: 11, color: "#6b7280", marginTop: 10, textAlign: "center" }}>
+                +{allFollowUps.length - 5} more bookings need follow-up
+              </p>
+            )}
+          </div>
+        );
+      })()}
+
+      </div>
+      {/* ── END DASHBOARD MAIN ── */}
 
       {showModal && <BookingModal onClose={() => setShowModal(false)} />}
     </div>

@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, CheckCircle, X, Play, Images } from "lucide-react";
+import Logo from "../components/Logo";
+import { useParams } from "react-router-dom";
 import { useBookings } from "../context/BookingsContext";
-import { auditoriumInfo } from "../data/dummyData";
 import { useToast, ToastProvider } from "../components/Toast";
+import { bookingsAPI, settingsAPI } from "../services/api";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS   = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -10,23 +12,26 @@ const MONTHS   = ["January","February","March","April","May","June","July","Augu
 function getDaysInMonth(y, m) { return new Date(y, m + 1, 0).getDate(); }
 function getFirstDay(y, m)    { return new Date(y, m, 1).getDay(); }
 
-const SESSIONS = ["Morning", "Evening", "Full Day"];
-const EVENT_TYPES = ["Wedding", "Reception", "Engagement", "Birthday", "Conference", "Anniversary", "Baptism", "Other"];
-
 /* ─── Availability legend ─────────────────────────────
   green  = fully available
   yellow = partially booked (1–2 sessions taken)
   red    = fully booked (all 3 sessions OR Full Day taken)
   gray   = past date
 ─────────────────────────────────────────────────────── */
-function getDayStatus(dateStr, bookings) {
+function getDayStatus(dateStr, bookings, blackoutDates = []) {
+  if (blackoutDates.includes(dateStr)) return "blocked";
   const today = new Date().toISOString().split("T")[0];
   if (dateStr < today) return "past";
   const dayBookings = bookings.filter(b => b.date === dateStr && b.status !== "Cancelled");
   if (dayBookings.length === 0) return "available";
-  const hasFullDay = dayBookings.some(b => b.session === "Full Day");
+
+  const activeBookings = dayBookings.filter(b => b.status === "Confirmed" || b.status === "Completed" || b.status === "Pending Payment");
+  
+  if (activeBookings.length === 0) return "enquiry";
+
+  const hasFullDay = activeBookings.some(b => b.session === "Full Day");
   if (hasFullDay) return "full";
-  const sessions = new Set(dayBookings.map(b => b.session));
+  const sessions = new Set(activeBookings.map(b => b.session));
   if (sessions.size >= 2) return "full";
   return "partial";
 }
@@ -35,25 +40,10 @@ const STATUS_COLORS = {
   available: { bg: "#dcfce7", border: "#86efac", text: "#15803d", dot: "#22c55e", label: "Available" },
   partial:   { bg: "#fef9c3", border: "#fde047", text: "#a16207", dot: "#eab308", label: "Partial"   },
   full:      { bg: "#fee2e2", border: "#fca5a5", text: "#b91c1c", dot: "#ef4444", label: "Full"       },
+  enquiry:   { bg: "#dbeafe", border: "#93c5fd", text: "#1d4ed8", dot: "#3b82f6", label: "Enquiry"     },
   past:      { bg: "#f3f4f6", border: "#e5e7eb", text: "#9ca3af", dot: "#d1d5db", label: "Past"       },
+  blocked:   { bg: "repeating-linear-gradient(135deg, #f9fafb, #f9fafb 4px, #e5e7eb 4px, #e5e7eb 8px)", border: "#d1d5db", text: "#9ca3af", dot: "#9ca3af", label: "Blocked" },
 };
-
-const GALLERY_ITEMS = [
-  // ── Images (Unsplash — wedding/banquet hall themed) ──
-  { type: "image", src: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=800&q=80", label: "Grand Main Hall",       category: "Halls" },
-  { type: "image", src: "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=800&q=80", label: "Wedding Ceremony",     category: "Events" },
-  { type: "image", src: "https://images.unsplash.com/photo-1478146896981-b80fe463b330?w=800&q=80", label: "Banquet Setup",        category: "Halls" },
-  { type: "image", src: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=800&q=80", label: "Birthday Celebration", category: "Events" },
-  { type: "image", src: "https://images.unsplash.com/photo-1621275471769-e6aa344546d5?w=800&q=80", label: "Stage & Decor",        category: "Decor" },
-  { type: "image", src: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&q=80", label: "Open Stage Night",     category: "Halls" },
-  { type: "image", src: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800&q=80", label: "Conference Setup",    category: "Events" },
-  { type: "image", src: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80", label: "Mini Hall",            category: "Halls" },
-  { type: "image", src: "https://images.unsplash.com/photo-1549451371-64aa98a6f660?w=800&q=80", label: "Floral Decoration",    category: "Decor" },
-  // ── YouTube Embed Videos ──
-  { type: "video", src: "https://www.youtube.com/embed/K4TOrB7at0Y", thumb: "https://img.youtube.com/vi/K4TOrB7at0Y/hqdefault.jpg", label: "Wedding Highlights",   category: "Videos" },
-  { type: "video", src: "https://www.youtube.com/embed/jfKfPfyJRdk", thumb: "https://img.youtube.com/vi/jfKfPfyJRdk/hqdefault.jpg", label: "Venue Walkthrough",    category: "Videos" },
-  { type: "video", src: "https://www.youtube.com/embed/dQw4w9WgXcQ", thumb: "https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg", label: "Event Celebration",    category: "Videos" },
-];
 
 const GALLERY_CATEGORIES = ["All", "Halls", "Events", "Decor", "Videos"];
 
@@ -110,11 +100,11 @@ function Lightbox({ item, onClose, onPrev, onNext }) {
 }
 
 /* ── Gallery Section ── */
-function GallerySection() {
+function GallerySection({ galleryItems, phone, venueName }) {
   const [activeCategory, setActiveCategory] = useState("All");
   const [lightboxIdx, setLightboxIdx] = useState(null);
 
-  const filtered = activeCategory === "All" ? GALLERY_ITEMS : GALLERY_ITEMS.filter(g => g.category === activeCategory);
+  const filtered = activeCategory === "All" ? galleryItems : galleryItems.filter(g => g.category === activeCategory);
 
   const open = (i) => setLightboxIdx(i);
   const close = () => setLightboxIdx(null);
@@ -134,7 +124,7 @@ function GallerySection() {
           A Glimpse of <span style={{ color: "#D4A017" }}>Our Venue</span>
         </h2>
         <p style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 6, margin: 0 }}>
-          Real events at Sreelakshmi Centre
+          Real events at {venueName || "Sreelakshmi Centre"}
         </p>
       </div>
 
@@ -159,10 +149,10 @@ function GallerySection() {
       {/* Masonry-style grid */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))",
-        gridAutoRows: "120px",
+        gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+        gridAutoRows: "200px",
         gridAutoFlow: "dense",
-        gap: 8,
+        gap: 12,
       }}>
         {filtered.map((item, i) => (
           <div
@@ -220,7 +210,7 @@ function GallerySection() {
       <div style={{ textAlign: "center", marginTop: 28 }}>
         <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>
           Want to see more? Visit us or call{" "}
-          <a href={`tel:${auditoriumInfo.phone}`} style={{ color: "#D4A017", textDecoration: "none", fontWeight: 700 }}>{auditoriumInfo.phone}</a>
+          <a href={`tel:${phone}`} style={{ color: "#D4A017", textDecoration: "none", fontWeight: 700 }}>{phone}</a>
           {" "}for a live tour.
         </p>
       </div>
@@ -233,8 +223,11 @@ function GallerySection() {
   );
 }
 
-function EnquiryForm({ dateStr, onClose, onSubmit }) {
-  const [form, setForm] = useState({ name: "", phone: "", eventType: "Wedding", session: "Full Day", guests: "", notes: "" });
+function EnquiryForm({ dateStr, onClose, onSubmit, eventTypes, sessions }) {
+  const defaultEvent = eventTypes?.[0] || "Wedding";
+  const defaultSession = sessions?.find(s => s.name === "Full Day")?.name || sessions?.[0]?.name || "Morning";
+  
+  const [form, setForm] = useState({ name: "", phone: "", eventType: defaultEvent, session: defaultSession, guests: "", notes: "" });
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
   const iStyle = { width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e5e7eb", fontSize: 13, color: "#374151", background: "#fff", outline: "none", fontFamily: "'DM Sans', sans-serif", boxSizing: "border-box" };
 
@@ -278,13 +271,13 @@ function EnquiryForm({ dateStr, onClose, onSubmit }) {
             <div>
               <label style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.07em", display: "block", marginBottom: 6 }}>Event Type</label>
               <select value={form.eventType} onChange={e => set("eventType", e.target.value)} style={{ ...iStyle, cursor: "pointer" }}>
-                {EVENT_TYPES.map(t => <option key={t}>{t}</option>)}
+                {(eventTypes || []).map(t => <option key={t}>{t}</option>)}
               </select>
             </div>
             <div>
               <label style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.07em", display: "block", marginBottom: 6 }}>Session</label>
               <select value={form.session} onChange={e => set("session", e.target.value)} style={{ ...iStyle, cursor: "pointer" }}>
-                {SESSIONS.map(s => <option key={s}>{s}</option>)}
+                {(sessions || []).map(s => <option key={s.name} value={s.name}>{s.name} ({s.time})</option>)}
               </select>
             </div>
           </div>
@@ -316,8 +309,23 @@ function EnquiryForm({ dateStr, onClose, onSubmit }) {
 }
 
 function PublicBookingInner() {
+  const { slug } = useParams();
   const { bookings } = useBookings();
   const { addToast } = useToast();
+  
+  const [venueInfo, setVenueInfo] = useState({ name: "Loading...", location: "", phone: "", halls: [], gallery: [] });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    settingsAPI.getPublic(slug).then(res => {
+      setVenueInfo(res.data);
+      setLoading(false);
+    }).catch(err => {
+      console.error(err);
+      setLoading(false);
+    });
+  }, [slug]);
+
   const now = new Date();
   const [year,  setYear]  = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
@@ -340,27 +348,47 @@ function PublicBookingInner() {
   const handleDayClick = (day) => {
     const ds = getDateStr(day);
     if (ds < todayStr) return;
-    const status = getDayStatus(ds, bookings);
+    const status = getDayStatus(ds, bookings, venueInfo.blackoutDates || []);
+    if (status === "blocked") return;
     if (status === "full") { addToast("This date is fully booked. Please choose another date.", "error"); return; }
     setSelectedDate(ds);
     setShowForm(true);
   };
 
-  const handleSubmit = (form) => {
+  const handleSubmit = async (form) => {
+    try {
+      await bookingsAPI.createEnquiry({
+        tenantSlug: slug,
+        customerName: form.name,
+        phone: form.phone,
+        eventType: form.eventType,
+        date: selectedDate,
+        session: form.session,
+        guests: form.guests,
+        notes: form.notes,
+        hall: "Main Hall" // Public booking typically defaults to Main Hall or user can't select it here
+      });
+    } catch (err) {
+      console.error("Failed to save enquiry:", err);
+    }
+
     const msg = encodeURIComponent(
       `🏛️ *New Booking Enquiry*\n\n👤 Name: ${form.name}\n📞 Phone: ${form.phone}\n📅 Date: ${new Date(selectedDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}\n🎉 Event: ${form.eventType}\n🕐 Session: ${form.session}\n👥 Guests: ${form.guests || "Not specified"}\n📝 Notes: ${form.notes || "None"}\n\nPlease confirm availability. Thank you!`
     );
-    window.open(`https://wa.me/${auditoriumInfo.phone.replace(/\D/g, "")}?text=${msg}`, "_blank");
+    const formattedPhone = venueInfo.phone ? venueInfo.phone.replace(/\D/g, "") : "";
+    window.open(`https://wa.me/${formattedPhone}?text=${msg}`, "_blank");
     setShowForm(false);
     setSubmitted(true);
-    addToast("Enquiry sent on WhatsApp! We'll confirm shortly. 🎉", "success");
+    addToast("Enquiry sent successfully! We'll confirm shortly. 🎉", "success");
   };
 
   // Count bookings per day for the current month
   const monthStr = `${year}-${String(month + 1).padStart(2, "0")}`;
   const monthBookings = bookings.filter(b => b.date.startsWith(monthStr) && b.status !== "Cancelled");
 
-  const halls = auditoriumInfo.halls || [];
+  const halls = venueInfo.halls || [];
+
+  if (loading) return <div style={{ minHeight: "100vh", background: "#0D2418", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>Loading venue info...</div>;
 
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(160deg, #0D2418 0%, #1B4332 40%, #2D6A4F 100%)", fontFamily: "'DM Sans', sans-serif" }}>
@@ -368,14 +396,14 @@ function PublicBookingInner() {
       {/* ── NAV ── */}
       <nav style={{ padding: "16px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, background: "#D4A017", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>🏛️</div>
+          <Logo size={38} bgColor="#D4A017" iconColor="#0D2418" />
           <div>
-            <p style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, fontWeight: 700, color: "#fff", margin: 0 }}>{auditoriumInfo.name}</p>
-            <p style={{ fontSize: 11, color: "#D4A017", margin: 0 }}>📍 {auditoriumInfo.location}</p>
+            <p style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, fontWeight: 700, color: "#fff", margin: 0 }}>{venueInfo.name}</p>
+            <p style={{ fontSize: 11, color: "#D4A017", margin: 0 }}>📍 {venueInfo.location}</p>
           </div>
         </div>
-        <a href={`tel:${auditoriumInfo.phone}`} style={{ padding: "8px 18px", borderRadius: 20, border: "1.5px solid #D4A017", background: "transparent", color: "#D4A017", fontSize: 12, fontWeight: 700, cursor: "pointer", textDecoration: "none", display: "flex", alignItems: "center", gap: 6 }}>
-          📞 {auditoriumInfo.phone}
+        <a href={`tel:${venueInfo.phone}`} style={{ padding: "8px 18px", borderRadius: 20, border: "1.5px solid #D4A017", background: "transparent", color: "#D4A017", fontSize: 12, fontWeight: 700, cursor: "pointer", textDecoration: "none", display: "flex", alignItems: "center", gap: 6 }}>
+          📞 {venueInfo.phone}
         </a>
       </nav>
 
@@ -418,9 +446,8 @@ function PublicBookingInner() {
             </button>
           </div>
 
-          {/* Legend */}
           <div style={{ display: "flex", justifyContent: "center", gap: 20, padding: "12px 24px 4px", flexWrap: "wrap" }}>
-            {Object.entries(STATUS_COLORS).filter(([k]) => k !== "past").map(([key, val]) => (
+            {Object.entries(STATUS_COLORS).filter(([k]) => k !== "past" && k !== "blocked").map(([key, val]) => (
               <div key={key} style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <div style={{ width: 10, height: 10, borderRadius: "50%", background: val.dot }} />
                 <span style={{ fontSize: 11, fontWeight: 600, color: "#6b7280" }}>{val.label}</span>
@@ -428,7 +455,7 @@ function PublicBookingInner() {
             ))}
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#d1d5db" }} />
-              <span style={{ fontSize: 11, fontWeight: 600, color: "#6b7280" }}>Past / Unavailable</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "#6b7280" }}>Past / Blocked</span>
             </div>
           </div>
 
@@ -446,17 +473,18 @@ function PublicBookingInner() {
             {cells.map((day, i) => {
               if (!day) return <div key={i} />;
               const ds = getDateStr(day);
-              const status = getDayStatus(ds, bookings);
+              const status = getDayStatus(ds, bookings, venueInfo.blackoutDates || []);
               const sc = STATUS_COLORS[status];
               const isToday = ds === todayStr;
               const isWeekend = [0, 6].includes((firstDay + day - 1) % 7);
               const isPast = status === "past";
+              const isBlocked = status === "blocked";
               const dayBks = bookings.filter(b => b.date === ds && b.status !== "Cancelled");
 
               return (
                 <div
                   key={day}
-                  onClick={() => !isPast && handleDayClick(day)}
+                  onClick={() => !isPast && !isBlocked && handleDayClick(day)}
                   style={{
                     borderRadius: 12, padding: "8px 4px 10px",
                     cursor: isPast ? "default" : "pointer",
@@ -529,11 +557,11 @@ function PublicBookingInner() {
       </div>
 
       {/* ── GALLERY ── */}
-      <GallerySection />
+      <GallerySection galleryItems={venueInfo.gallery || []} phone={venueInfo.phone} venueName={venueInfo.name} />
 
       {/* ── FOOTER ── */}
       <div style={{ textAlign: "center", padding: "24px", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
-        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>© 2026 {auditoriumInfo.name} · Powered by HallMaster</p>
+        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>© 2026 {venueInfo.name} · Powered by Venueza</p>
       </div>
 
       {showForm && selectedDate && (
@@ -541,6 +569,8 @@ function PublicBookingInner() {
           dateStr={selectedDate}
           onClose={() => setShowForm(false)}
           onSubmit={handleSubmit}
+          eventTypes={venueInfo.eventTypes}
+          sessions={venueInfo.sessions}
         />
       )}
     </div>

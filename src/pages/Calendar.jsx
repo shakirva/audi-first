@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
-import { hallColors } from "../data/dummyData";
+import { useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight, Plus, Ban } from "lucide-react";
+const hallColors = { "Main Hall": { hex: "#1B4332" }, "Mini Hall": { hex: "#2563eb" }, "Open Stage": { hex: "#D4A017" } };
 import BookingModal from "../components/BookingModal";
 import { useBookings } from "../context/BookingsContext";
+import { settingsAPI } from "../services/api";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS   = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -24,10 +25,17 @@ const STATUS_STYLE = {
 export default function Calendar() {
   const now = new Date();
   const { bookings } = useBookings();
-  const [year,  setYear]        = useState(now.getFullYear());
-  const [month, setMonth]       = useState(now.getMonth());
-  const [selected, setSelected] = useState(null);
+  const [year,  setYear]          = useState(now.getFullYear());
+  const [month, setMonth]         = useState(now.getMonth());
+  const [selected, setSelected]   = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [blackoutDates, setBlackoutDates] = useState([]);
+
+  useEffect(() => {
+    settingsAPI.get()
+      .then(res => { if (res.data.blackoutDates) setBlackoutDates(res.data.blackoutDates); })
+      .catch(console.error);
+  }, []);
 
   const daysInMonth = getDaysInMonth(year, month);
   const firstDay    = getFirstDay(year, month);
@@ -59,15 +67,23 @@ export default function Calendar() {
   // 0 halls → green (fully available), 1-2 → yellow (partial), 3 → red (fully booked)
   const TOTAL_HALLS = 3;
   const availColor = (day) => {
-    const dayBookings = bookingsOnDay(day).filter(b => b.status !== "Enquiry");
-    const uniqueHalls = new Set(dayBookings.map(b => b.hall)).size;
+    const dateStr = `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+    // Blocked date overrides everything
+    if (blackoutDates.includes(dateStr)) return { bg: "#f3f4f6", border: "#d1d5db", label: "Blocked" };
+    const dayBookings = bookingsOnDay(day);
+    const activeBookings = dayBookings.filter(b => b.status !== "Enquiry" && b.status !== "Cancelled");
+    // Only enquiries → blue
+    if (dayBookings.length > 0 && activeBookings.length === 0) {
+      return { bg: "#dbeafe", border: "#93c5fd", label: "Enquiry" };
+    }
+    const uniqueHalls = new Set(activeBookings.map(b => b.hall)).size;
     if (uniqueHalls === 0) return { bg: "#dcfce7", border: "#22c55e", label: "Available" };
     if (uniqueHalls < TOTAL_HALLS) return { bg: "#fef9c3", border: "#eab308", label: "Partial" };
     return { bg: "#fee2e2", border: "#ef4444", label: "Full" };
   };
 
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif", display: "grid", gridTemplateColumns: "1fr", gap: 16, alignItems: "start" }}>
+    <div className="hm-calendar-layout" style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* ── CALENDAR CARD ── */}
       <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 2px 16px rgba(0,0,0,0.06)", overflow: "hidden" }}>
@@ -100,60 +116,94 @@ export default function Calendar() {
             if (!day) return <div key={i} />;
             const dayBookings = bookingsOnDay(day);
             const dateStr = `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
-            const isToday    = dateStr === todayStr;
-            const isSelected = day === selected;
-            const isWeekend  = [0, 6].includes((firstDay + day - 1) % 7);
-            const avail      = availColor(day);
+            const isToday      = dateStr === todayStr;
+            const isSelected   = day === selected;
+            const isWeekend    = [0, 6].includes((firstDay + day - 1) % 7);
+            const isBlocked    = blackoutDates.includes(dateStr);
+            const avail        = availColor(day);
 
             return (
-              <div key={day} onClick={() => setSelected(day === selected ? null : day)}
+              <div key={day}
+                onClick={() => { if (!isBlocked) setSelected(day === selected ? null : day); }}
                 style={{
-                  borderRadius: 8, padding: "4px 3px 5px", cursor: "pointer", minHeight: 52,
-                  background: isSelected ? "#1B4332" : isToday ? "#F0F4EF" : avail.bg,
-                  border: isSelected ? "2px solid transparent" : isToday ? `2px solid #1B4332` : `2px solid ${avail.border}`,
+                  borderRadius: 8, padding: "4px 3px 5px", minHeight: 52,
+                  cursor: isBlocked ? "not-allowed" : "pointer",
+                  background: isBlocked ? "repeating-linear-gradient(135deg, #f9fafb, #f9fafb 4px, #e5e7eb 4px, #e5e7eb 8px)"
+                    : isSelected ? "#1B4332" : isToday ? "#F0F4EF" : avail.bg,
+                  border: isBlocked ? "2px solid #9ca3af"
+                    : isSelected ? "2px solid transparent" : isToday ? `2px solid #1B4332` : `2px solid ${avail.border}`,
                   transition: "all 0.15s",
+                  opacity: isBlocked ? 0.65 : 1,
                 }}
-                onMouseEnter={e => { if (!isSelected) e.currentTarget.style.opacity = "0.8"; }}
-                onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
+                onMouseEnter={e => { if (!isSelected && !isBlocked) e.currentTarget.style.opacity = "0.8"; }}
+                onMouseLeave={e => { e.currentTarget.style.opacity = isBlocked ? "0.65" : "1"; }}
               >
                 <div style={{
                   textAlign: "center", fontSize: 11, fontWeight: isToday ? 700 : 500,
-                  color: isSelected ? "#fff" : isToday ? "#1B4332" : isWeekend ? "#ef4444" : "#374151",
+                  color: isBlocked ? "#9ca3af"
+                    : isSelected ? "#fff" : isToday ? "#1B4332" : isWeekend ? "#ef4444" : "#374151",
                   marginBottom: 2,
                 }}>
                   {day}
+                  {isBlocked && <div style={{ fontSize: 8, color: "#9ca3af", fontWeight: 700, marginTop: 1 }}>🚫 Blocked</div>}
                 </div>
                 {/* Booking dots */}
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 1, justifyContent: "center" }}>
-                  {dayBookings.slice(0, 2).map((b, bi) => (
-                    <div key={bi} style={{
-                      width: 5, height: 5, borderRadius: "50%",
-                      background: isSelected ? "rgba(255,255,255,0.8)" : (hallColorMap[b.hall] || "#1B4332"),
-                    }} title={b.customerName} />
-                  ))}
-                  {dayBookings.length > 2 && (
-                    <span style={{ fontSize: 7, color: isSelected ? "rgba(255,255,255,0.7)" : "#9ca3af", lineHeight: 1 }}>
-                      +{dayBookings.length - 2}
-                    </span>
-                  )}
-                </div>
+                {!isBlocked && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 1, justifyContent: "center" }}>
+                    {dayBookings.slice(0, 3).map((b, bi) => {
+                      const statusDotColor = b.status === "Enquiry" ? "#3b82f6"
+                        : b.status === "Pending Payment" ? "#f59e0b"
+                        : b.status === "Confirmed" ? "#22c55e"
+                        : b.status === "Completed" ? "#9ca3af"
+                        : "#ef4444";
+                      return (
+                        <div key={bi} style={{
+                          width: 5, height: 5, borderRadius: "50%",
+                          background: isSelected ? "rgba(255,255,255,0.8)" : statusDotColor,
+                        }} title={`${b.customerName} — ${b.status}`} />
+                      );
+                    })}
+                    {dayBookings.length > 3 && (
+                      <span style={{ fontSize: 7, color: isSelected ? "rgba(255,255,255,0.7)" : "#9ca3af", lineHeight: 1 }}>
+                        +{dayBookings.length - 3}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
 
         {/* Legend */}
-        <div style={{ padding: "10px 16px", borderTop: "1px solid #f3f4f6", display: "flex", gap: 12, flexWrap: "wrap" }}>
-          {[
-            { color: "#22c55e", bg: "#dcfce7", label: "Available" },
-            { color: "#eab308", bg: "#fef9c3", label: "Partial" },
-            { color: "#ef4444", bg: "#fee2e2", label: "Full" },
-          ].map(item => (
-            <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              <div style={{ width: 10, height: 10, borderRadius: 3, background: item.bg, border: `1.5px solid ${item.color}` }} />
-              <span style={{ fontSize: 10, color: "#6b7280" }}>{item.label}</span>
-            </div>
-          ))}
+        <div style={{ padding: "10px 16px", borderTop: "1px solid #f3f4f6", display: "flex", gap: 16, flexWrap: "wrap", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            {[
+              { color: "#22c55e", bg: "#dcfce7",  label: "Available" },
+              { color: "#eab308", bg: "#fef9c3",  label: "Partial" },
+              { color: "#ef4444", bg: "#fee2e2",  label: "Full" },
+              { color: "#93c5fd", bg: "#dbeafe",  label: "Enquiry only" },
+              { color: "#9ca3af", bg: "#f3f4f6",  label: "Blocked" },
+            ].map(item => (
+              <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <div style={{ width: 10, height: 10, borderRadius: 3, background: item.bg, border: `1.5px solid ${item.color}` }} />
+                <span style={{ fontSize: 10, color: "#6b7280" }}>{item.label}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {[
+              { dot: "#3b82f6", label: "Enquiry" },
+              { dot: "#f59e0b", label: "Pending" },
+              { dot: "#22c55e", label: "Confirmed" },
+              { dot: "#9ca3af", label: "Completed" },
+            ].map(item => (
+              <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: item.dot }} />
+                <span style={{ fontSize: 9, color: "#9ca3af" }}>{item.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -225,7 +275,8 @@ export default function Calendar() {
             return [
               { label: "Total bookings", value: mb.length, color: "#1B4332" },
               { label: "Confirmed",      value: mb.filter(b => b.status === "Confirmed").length, color: "#15803d" },
-              { label: "Pending",        value: mb.filter(b => b.status === "Pending Payment").length, color: "#b45309" },
+              { label: "Pending",        value: mb.filter(b => b.status === "Pending Payment").length, color: "#d97706" },
+              { label: "Enquiry",        value: mb.filter(b => b.status === "Enquiry").length, color: "#3b82f6" },
               { label: "Revenue",        value: "₹" + mb.filter(b=>b.status==="Confirmed"||b.status==="Completed").reduce((s,b)=>s+b.totalAmount,0).toLocaleString(), color: "#D4A017" },
             ].map(item => (
               <div key={item.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
@@ -237,7 +288,9 @@ export default function Calendar() {
         </div>
       </div>
 
-      {showModal && <BookingModal onClose={() => setShowModal(false)} prefillDate={selectedDateStr} />}
+      {showModal && selectedDateStr && !blackoutDates.includes(selectedDateStr) && (
+        <BookingModal onClose={() => setShowModal(false)} prefillDate={selectedDateStr} />
+      )}
     </div>
   );
 }

@@ -1,26 +1,8 @@
-import { useState } from "react";
-import { X, User, Phone, CalendarDays, Building2, Users, IndianRupee, FileText, CheckCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, User, Phone, CalendarDays, Building2, Users, IndianRupee, FileText, CheckCircle, Tag } from "lucide-react";
 import { useToast } from "./Toast";
 import { useBookings } from "../context/BookingsContext";
-
-const eventTypeOptions = [
-  { label: "💍 Wedding", value: "Wedding" },
-  { label: "🥂 Reception", value: "Reception" },
-  { label: "💑 Engagement", value: "Engagement" },
-  { label: "✝️ Baptism", value: "Baptism" },
-  { label: "🎂 Birthday", value: "Birthday" },
-  { label: "🙏 Seemantham", value: "Seemantham" },
-  { label: "💼 Corporate", value: "Corporate" },
-  { label: "🎤 Conference", value: "Conference" },
-  { label: "🎓 Annual Day", value: "Annual Day" },
-  { label: "🎉 Other", value: "Other" },
-];
-
-const hallOptions = [
-  { name: "Main Hall",   price: 15000, capacity: 600, icon: "🏛️" },
-  { name: "Mini Hall",   price: 6000,  capacity: 150, icon: "🏠" },
-  { name: "Open Stage",  price: 8000,  capacity: 300, icon: "🌿" },
-];
+import { settingsAPI } from "../services/api";
 
 const iStyle = {
   width: "100%", padding: "10px 14px", borderRadius: 10,
@@ -46,10 +28,29 @@ export default function BookingModal({ onClose, prefillDate = "", editData = nul
     date: editData?.date ?? prefillDate,
     session: editData?.session ?? "Full Day",
     guests: editData?.guests ?? "",
-    advance: editData?.advance ?? "",
+    advance: editData?.advance ?? "0",
     totalAmount: editData?.totalAmount ?? "",
     notes: editData?.notes ?? "",
+    status: editData?.status ?? "Enquiry",
   });
+
+  const [settings, setSettings] = useState(null);
+
+  useEffect(() => {
+    settingsAPI.get().then(res => setSettings(res.data)).catch(console.error);
+  }, []);
+
+  const STATUS_OPTIONS = [
+    { value: "Enquiry", emoji: "🔵", color: "#3b82f6", bg: "#dbeafe" },
+    { value: "Pending Payment", emoji: "🟡", color: "#d97706", bg: "#fef3c7" },
+    { value: "Confirmed", emoji: "🟢", color: "#15803d", bg: "#dcfce7" },
+  ];
+
+  if (!settings) return null;
+
+  const eventTypeOptions = settings.eventTypes.map(e => ({ label: e, value: e }));
+  const hallOptions = settings.halls;
+  const sessionOptions = settings.sessions;
 
   const selectedHall = hallOptions.find(h => h.name === form.hall);
 
@@ -57,27 +58,67 @@ export default function BookingModal({ onClose, prefillDate = "", editData = nul
     const { name, value } = e.target;
     setForm(prev => {
       const updated = { ...prev, [name]: value };
+      
+      // Auto-calculate Total Amount on Hall/Session change
       if (name === "hall" || name === "session") {
         const hall = hallOptions.find(h => h.name === updated.hall);
         if (hall) {
           updated.totalAmount = String(hall.price * (updated.session === "Full Day" ? 2 : 1));
         }
       }
+
+      // Automatically update Booking Status based on payments
+      if (name === "advance" || name === "totalAmount" || name === "hall" || name === "session") {
+        const adv = Number(updated.advance || 0);
+        const tot = Number(updated.totalAmount || 0);
+        if (tot > 0) {
+          if (adv >= tot) {
+            updated.status = "Confirmed";
+          } else if (adv > 0) {
+            updated.status = "Pending Payment";
+          } else {
+            updated.status = "Enquiry";
+          }
+        }
+      }
+
       return updated;
     });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.customerName || !form.phone || !form.date) {
+    if (!form.customerName || !form.phone || !form.date || !form.guests || !form.totalAmount) {
       addToast("Please fill all required fields", "error");
       return;
     }
+    
+    const adv = Number(form.advance || 0);
+    const tot = Number(form.totalAmount || 0);
+    const gst = Number(form.guests || 0);
+
+    if (gst < 1) {
+      addToast("Expected guests must be at least 1", "error");
+      return;
+    }
+    if (adv < 0) {
+      addToast("Advance payment cannot be negative", "error");
+      return;
+    }
+    if (tot <= 0) {
+      addToast("Total amount must be greater than 0", "error");
+      return;
+    }
+    if (adv > tot) {
+      addToast("Advance payment cannot exceed total amount", "error");
+      return;
+    }
+
     if (editData) {
       updateBooking(editData.id, form);
       addToast("Booking updated successfully! ✏️", "success");
     } else {
-      addBooking({ ...form, status: "Enquiry" });
+      addBooking({ ...form, status: form.status || "Enquiry" });
       addToast("Booking saved successfully! 🎉", "success");
     }
     onClose();
@@ -111,14 +152,14 @@ export default function BookingModal({ onClose, prefillDate = "", editData = nul
               <div>
                 <label style={labelSt}><User size={11} /> Customer Name *</label>
                 <input name="customerName" value={form.customerName} onChange={handleChange}
-                  placeholder="e.g. Arun & Divya" style={iStyle} required
+                  placeholder="e.g. Arun & Divya" style={iStyle} required minLength={3}
                   onFocus={e => e.target.style.borderColor = "#1B4332"}
                   onBlur={e => e.target.style.borderColor = "#e5e7eb"} />
               </div>
               <div>
                 <label style={labelSt}><Phone size={11} /> Phone Number *</label>
-                <input name="phone" value={form.phone} onChange={handleChange}
-                  placeholder="9447012345" style={iStyle} required
+                <input name="phone" value={form.phone} onChange={handleChange} type="tel"
+                  placeholder="e.g. 9447012345" style={iStyle} required minLength={10} pattern="[0-9]{10,15}"
                   onFocus={e => e.target.style.borderColor = "#1B4332"}
                   onBlur={e => e.target.style.borderColor = "#e5e7eb"} />
               </div>
@@ -177,16 +218,17 @@ export default function BookingModal({ onClose, prefillDate = "", editData = nul
             <div>
               <label style={labelSt}>Session</label>
               <div style={{ display: "flex", gap: 8 }}>
-                {["Morning", "Evening", "Full Day"].map(s => (
-                  <label key={s} style={{
+                {sessionOptions.map(s => (
+                  <label key={s.name} style={{
                     flex: 1, textAlign: "center", padding: "10px 0", borderRadius: 10, cursor: "pointer",
-                    border: `2px solid ${form.session === s ? "#1B4332" : "#e5e7eb"}`,
-                    background: form.session === s ? "#1B4332" : "#fff",
-                    color: form.session === s ? "#fff" : "#6b7280",
+                    border: `2px solid ${form.session === s.name ? "#1B4332" : "#e5e7eb"}`,
+                    background: form.session === s.name ? "#1B4332" : "#fff",
+                    color: form.session === s.name ? "#fff" : "#6b7280",
                     fontSize: 12, fontWeight: 700, transition: "all 0.15s",
                   }}>
-                    <input type="radio" name="session" value={s} checked={form.session === s} onChange={handleChange} style={{ display: "none" }} />
-                    {s === "Morning" ? "🌅" : s === "Evening" ? "🌆" : "☀️"} {s}
+                    <input type="radio" name="session" value={s.name} checked={form.session === s.name} onChange={handleChange} style={{ display: "none" }} />
+                    <div style={{ marginBottom: 4 }}>{s.name}</div>
+                    <div style={{ fontSize: 9, fontWeight: 500, opacity: 0.8 }}>{s.time}</div>
                   </label>
                 ))}
               </div>
@@ -200,23 +242,23 @@ export default function BookingModal({ onClose, prefillDate = "", editData = nul
             </p>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
               <div>
-                <label style={labelSt}><Users size={11} /> Expected Guests</label>
+                <label style={labelSt}><Users size={11} /> Expected Guests *</label>
                 <input type="number" name="guests" value={form.guests} onChange={handleChange}
-                  placeholder="e.g. 450" style={iStyle}
+                  placeholder="e.g. 450" style={iStyle} required min="1"
                   onFocus={e => e.target.style.borderColor = "#1B4332"}
                   onBlur={e => e.target.style.borderColor = "#e5e7eb"} />
               </div>
               <div>
-                <label style={labelSt}><IndianRupee size={11} /> Advance (₹)</label>
+                <label style={labelSt}><IndianRupee size={11} /> Advance (₹) *</label>
                 <input type="number" name="advance" value={form.advance} onChange={handleChange}
-                  placeholder="10000" style={iStyle}
+                  placeholder="0" style={iStyle} required min="0"
                   onFocus={e => e.target.style.borderColor = "#1B4332"}
                   onBlur={e => e.target.style.borderColor = "#e5e7eb"} />
               </div>
               <div>
-                <label style={labelSt}><IndianRupee size={11} /> Total Amount (₹)</label>
+                <label style={labelSt}><IndianRupee size={11} /> Total Amount (₹) *</label>
                 <input type="number" name="totalAmount" value={form.totalAmount} onChange={handleChange}
-                  placeholder="Auto-calculated" style={{ ...iStyle, background: "#f9fafb" }}
+                  placeholder="Auto-calculated" style={{ ...iStyle, background: "#f9fafb" }} required min="1"
                   onFocus={e => e.target.style.borderColor = "#1B4332"}
                   onBlur={e => e.target.style.borderColor = "#e5e7eb"} />
               </div>
@@ -233,13 +275,35 @@ export default function BookingModal({ onClose, prefillDate = "", editData = nul
           </div>
 
           {/* ── SECTION: Notes ── */}
-          <div style={{ marginBottom: 24 }}>
+          <div style={{ marginBottom: 20 }}>
             <label style={labelSt}><FileText size={11} /> Special Notes</label>
             <textarea name="notes" value={form.notes} onChange={handleChange}
               rows={3} placeholder="Any special requirements (decorations, catering, parking, etc.)…"
               style={{ ...iStyle, resize: "none", lineHeight: 1.6 }}
               onFocus={e => e.target.style.borderColor = "#1B4332"}
               onBlur={e => e.target.style.borderColor = "#e5e7eb"} />
+          </div>
+
+          {/* ── SECTION: Status ── */}
+          <div style={{ marginBottom: 24 }}>
+            <p style={{ fontSize: 11, fontWeight: 800, color: "#1B4332", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+              <Tag size={13} /> Booking Status
+            </p>
+            <div style={{ display: "flex", gap: 8 }}>
+              {STATUS_OPTIONS.map(s => (
+                <label key={s.value} style={{
+                  flex: 1, textAlign: "center", padding: "10px 4px", borderRadius: 10, cursor: "pointer",
+                  border: `2px solid ${form.status === s.value ? s.color : "#e5e7eb"}`,
+                  background: form.status === s.value ? s.bg : "#fff",
+                  color: form.status === s.value ? s.color : "#6b7280",
+                  fontSize: 11, fontWeight: 700, transition: "all 0.15s",
+                }}>
+                  <input type="radio" name="status" value={s.value} checked={form.status === s.value}
+                    onChange={handleChange} style={{ display: "none" }} />
+                  {s.emoji} {s.value}
+                </label>
+              ))}
+            </div>
           </div>
 
           {/* ── ACTIONS ── */}

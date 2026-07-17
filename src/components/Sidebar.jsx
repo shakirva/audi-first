@@ -1,29 +1,54 @@
 import { NavLink } from "react-router-dom";
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard, CalendarDays, Users, CreditCard,
-  BarChart3, BookOpen, Settings, LogOut, Building2, X, Wallet,
+  BarChart3, BookOpen, Settings, LogOut, X, Wallet, Building2,
 } from "lucide-react";
-import { auditoriumInfo, bookings } from "../data/dummyData";
+import Logo from "./Logo";
 import { useToast } from "./Toast";
 import { useRole } from "../context/RoleContext";
+import { useBookings } from "../context/BookingsContext";
 import { ROLE_COLORS } from "../context/rolePermissions";
-
-const pendingCount = bookings.filter(b => b.status === "Pending Payment").length;
-
-const allNavItems = [
-  { to: "/",          icon: LayoutDashboard, label: "Dashboard",  badge: null,          permission: null },
-  { to: "/bookings",  icon: BookOpen,         label: "Bookings",   badge: pendingCount,  permission: null },
-  { to: "/calendar",  icon: CalendarDays,     label: "Calendar",   badge: null,          permission: null },
-  { to: "/customers", icon: Users,            label: "Customers",  badge: null,          permission: null },
-  { to: "/payments",  icon: CreditCard,       label: "Payments",   badge: pendingCount,  permission: "canViewPayments" },
-  { to: "/expenses",  icon: Wallet,           label: "Expenses",   badge: null,          permission: "canViewReports" },
-  { to: "/reports",   icon: BarChart3,        label: "Reports",    badge: null,          permission: "canViewReports" },
-];
+import { settingsAPI } from "../services/api";
 
 export default function Sidebar({ open, onClose }) {
   const { addToast } = useToast();
-  const { role, logout, can } = useRole();
+  const { role, user, logout, can } = useRole();
+  const { bookings } = useBookings();
   const rc = ROLE_COLORS[role] || ROLE_COLORS.Staff;
+  
+  const [venueInfo, setVenueInfo] = useState({
+    name: "Sreelakshmi Convention Centre",
+    location: "Kerala, India",
+    ownerName: "Rajan P.K."
+  });
+
+  useEffect(() => {
+    settingsAPI.get().then(({ data }) => {
+      if (data) {
+        setVenueInfo({
+          name: data.venueName || "Sreelakshmi Convention Centre",
+          location: data.location || "Kerala, India",
+          ownerName: data.ownerName || "Rajan P.K."
+        });
+      }
+    }).catch(() => {});
+  }, []);
+  
+  const enquiryCount = bookings.filter(b => b.status === "Enquiry").length;
+  const pendingCount = bookings.filter(b => b.status === "Pending Payment").length;
+
+  const allNavItems = [
+    { to: "/",          icon: LayoutDashboard, label: "Dashboard",  badge: null,          permission: null },
+    { to: "/bookings",  icon: BookOpen,         label: "Bookings",   badge: enquiryCount,  permission: null },
+    { to: "/calendar",  icon: CalendarDays,     label: "Calendar",   badge: null,          permission: null },
+    { to: "/customers", icon: Users,            label: "Customers",  badge: null,          permission: null },
+    { to: "/payments",  icon: CreditCard,       label: "Payments",   badge: pendingCount,  permission: "canViewPayments" },
+    { to: "/expenses",  icon: Wallet,           label: "Expenses",   badge: null,          permission: "canViewReports" },
+    { to: "/reports",   icon: BarChart3,        label: "Reports",    badge: null,          permission: "canViewReports" },
+    { to: "/superadmin/tenants", icon: Building2, label: "Tenants",  badge: null,          permission: "canManageTenants" },
+  ];
+
   const navItems = allNavItems.filter(item => !item.permission || can(item.permission));
 
   return (
@@ -49,19 +74,12 @@ export default function Sidebar({ open, onClose }) {
         {/* ── LOGO ── */}
         <div style={{ padding: "22px 20px 18px", borderBottom: "1px solid rgba(212,160,23,0.15)", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{
-              width: 44, height: 44, borderRadius: 14,
-              background: "linear-gradient(135deg, #D4A017, #f0c040)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 4px 16px rgba(212,160,23,0.4)", flexShrink: 0,
-            }}>
-              <Building2 size={22} style={{ color: "#0D2418" }} />
-            </div>
+            <Logo size={44} />
             <div style={{ flex: 1 }}>
               <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: "#fff", lineHeight: 1.2, margin: 0 }}>
-                HallMaster
+                Venueza
               </h1>
-              <p style={{ fontSize: 11, color: "#D4A017", letterSpacing: 1, marginTop: 2, margin: 0 }}>ഹാൾ മാസ്റ്റർ</p>
+              <p style={{ fontSize: 11, color: "#D4A017", letterSpacing: 1, marginTop: 2, margin: 0 }}>വെന്യൂസ</p>
             </div>
             <button
               onClick={onClose}
@@ -90,10 +108,10 @@ export default function Sidebar({ open, onClose }) {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ fontSize: 12, fontWeight: 700, color: "#fff", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {auditoriumInfo.name}
+                {venueInfo.name}
               </p>
               <p style={{ fontSize: 10, color: "rgba(212,160,23,0.8)", margin: "2px 0 0" }}>
-                📍 {auditoriumInfo.location || "Kerala, India"}
+                📍 {venueInfo.location}
               </p>
             </div>
             <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 8px #22c55e", flexShrink: 0 }} />
@@ -187,13 +205,13 @@ export default function Sidebar({ open, onClose }) {
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 15, fontWeight: 800, color: "#D4A017", flexShrink: 0,
             }}>
-              {auditoriumInfo.owner.charAt(0)}
+              {(user?.name || venueInfo.ownerName || "?").charAt(0).toUpperCase()}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontSize: 12, fontWeight: 700, color: "#fff", margin: 0 }}>{auditoriumInfo.owner}</p>
+              <p style={{ fontSize: 12, fontWeight: 700, color: "#fff", margin: 0 }}>{user?.role === "Tester" && user?.name === "Sandbox Auditor" ? "Manager" : user?.name || venueInfo.ownerName}</p>
               {/* Role badge */}
               <span style={{ fontSize: 9, fontWeight: 800, background: rc.bg, color: rc.text, borderRadius: 6, padding: "2px 7px", letterSpacing: "0.06em", textTransform: "uppercase", display: "inline-block", marginTop: 3 }}>
-                ● {role}
+                ● {role === "Tester" ? "Manager" : role}
               </span>
             </div>
           </div>
@@ -201,7 +219,7 @@ export default function Sidebar({ open, onClose }) {
           {/* Role badge */}
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14 }}>
             <span style={{ fontSize: 10, fontWeight: 700, color: rc.dot, background: `${rc.dot}22`, border: `1px solid ${rc.dot}44`, padding: "3px 10px", borderRadius: 12, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-              {role}
+              {role === "Tester" ? "MANAGER" : role}
             </span>
           </div>
 

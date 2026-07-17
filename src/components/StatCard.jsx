@@ -26,7 +26,7 @@ export default function StatCard({ title, value, sub, icon: Icon, color = "green
         {sub && <p style={{ fontSize: 11, color: "#6b7280", marginTop: 4 }}>{sub}</p>}
       </div>
       {trend && (
-        <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, background: p.trendBg, color: p.trendColor, padding: "4px 10px", borderRadius: 20, whiteSpace: "nowrap", flexShrink: 0 }}>
+        <div className="hm-trend-badge" style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, background: p.trendBg, color: p.trendColor, padding: "4px 10px", borderRadius: 20, whiteSpace: "nowrap", flexShrink: 0 }}>
           {trendUp ? <TrendingUp size={11} /> : <TrendingDown size={11} />} {trend}
         </div>
       )}

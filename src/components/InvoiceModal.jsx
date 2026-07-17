@@ -1,19 +1,41 @@
-  import { X, Printer, MessageCircle } from "lucide-react";
-import { auditoriumInfo } from "../data/dummyData";
+import { X, Printer, MessageCircle } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useToast } from "./Toast";
+import { settingsAPI } from "../services/api";
 
 export default function InvoiceModal({ booking, onClose }) {
   const { addToast } = useToast();
+  
+  const [venueInfo, setVenueInfo] = useState({
+    name: "Loading...",
+    location: "",
+    phone: "",
+    gstin: ""
+  });
+
+  useEffect(() => {
+    settingsAPI.get().then(({ data }) => {
+      if (data) {
+        setVenueInfo({
+          name: data.venueName || "Sreelakshmi Convention Centre",
+          location: data.location || "Taliparamba, Kannur, Kerala",
+          phone: data.phone || "9447012345",
+          gstin: data.gstin || ""
+        });
+      }
+    }).catch(() => {});
+  }, []);
+
   if (!booking) return null;
 
   const advance = Number(booking.advance ?? booking.advancePaid ?? 0);
   const balance = booking.totalAmount - advance;
-  const hallRental = Math.max(booking.totalAmount - 3500, 0);
+  const hallRental = booking.totalAmount;
   const formattedDate = (() => {
     try { return new Date(booking.date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }); }
     catch { return booking.date; }
   })();
-  const invoiceNo = `INV-2026-${booking.id.slice(2)}`;
+  const invoiceNo = `INV-2026-${String(booking.id).slice(-4)}`;
 
   const handlePrint = () => {
     const w = window.open("", "_blank");
@@ -44,10 +66,10 @@ export default function InvoiceModal({ booking, onClose }) {
     </style></head><body>
     <div class="header">
       <div>
-        <div class="venue-name">🏛️ ${auditoriumInfo.name || "Sharada Auditorium"}</div>
-        <div class="venue-sub">📍 ${auditoriumInfo.location || "Taliparamba, Kannur, Kerala"}</div>
-        <div class="venue-sub">📞 ${auditoriumInfo.phone || "9447012345"}</div>
-        <div class="venue-sub">GSTIN: ${auditoriumInfo.gstin || auditoriumInfo.gst || "32AABCT3518Q1Z5"}</div>
+        <div class="venue-name">🏛️ ${venueInfo.name}</div>
+        <div class="venue-sub">📍 ${venueInfo.location}</div>
+        <div class="venue-sub">📞 ${venueInfo.phone}</div>
+        ${venueInfo.gstin ? `<div class="venue-sub">GSTIN: ${venueInfo.gstin}</div>` : ''}
       </div>
       <div>
         <div class="inv-title">INVOICE</div>
@@ -63,8 +85,6 @@ export default function InvoiceModal({ booking, onClose }) {
     <table>
       <tr><th>Description</th><th>Details</th><th style="text-align:right">Amount</th></tr>
       <tr><td>Hall Rental (${booking.hall})</td><td>${booking.session} session</td><td style="text-align:right">₹${hallRental.toLocaleString()}</td></tr>
-      <tr><td>Extra Chairs (50 nos)</td><td>₹50 × 50</td><td style="text-align:right">₹2,500</td></tr>
-      <tr><td>Generator Backup</td><td>Full day</td><td style="text-align:right">₹1,000</td></tr>
     </table>
     <div class="totals">
       <div class="total-row"><span>Subtotal</span><span>₹${booking.totalAmount.toLocaleString()}</span></div>
@@ -74,7 +94,7 @@ export default function InvoiceModal({ booking, onClose }) {
       <div class="total-row balance"><span style="font-weight:700">BALANCE DUE</span><span style="font-weight:800">₹${balance.toLocaleString()}</span></div>
     </div>
     <div class="footer">
-      <div>Thank you for choosing ${auditoriumInfo.name || "our auditorium"}! 🙏</div>
+      <div>Thank you for choosing ${venueInfo.name}! 🙏</div>
       <div style="margin-top:4px">This is a computer-generated invoice. No signature required.</div>
       <div class="stamp">✅ ${booking.status}</div>
     </div>
@@ -85,7 +105,7 @@ export default function InvoiceModal({ booking, onClose }) {
 
   const handleWhatsApp = () => {
     const msg = encodeURIComponent(
-      `Dear ${booking.customerName},\n\nPlease find your invoice details below:\n\n🧾 Invoice: ${invoiceNo}\n📅 Date: ${formattedDate}\n🏛️ Hall: ${booking.hall} (${booking.session})\n💰 Total: ₹${booking.totalAmount.toLocaleString()}\n✅ Advance: ₹${advance.toLocaleString()}\n⚠️ Balance: ₹${balance.toLocaleString()}\n\nThank you! 🙏 — ${auditoriumInfo.name || "HallMaster"}`
+      `Dear ${booking.customerName},\n\nPlease find your invoice details below:\n\n🧾 Invoice: ${invoiceNo}\n📅 Date: ${formattedDate}\n🏛️ Hall: ${booking.hall} (${booking.session})\n💰 Total: ₹${booking.totalAmount.toLocaleString()}\n✅ Advance: ₹${advance.toLocaleString()}\n⚠️ Balance: ₹${balance.toLocaleString()}\n\nThank you! 🙏 — ${venueInfo.name}`
     );
     window.open(`https://wa.me/91${booking.phone}?text=${msg}`, "_blank");
     addToast("Invoice shared on WhatsApp! 📱", "success");
@@ -113,10 +133,10 @@ export default function InvoiceModal({ booking, onClose }) {
           {/* Letterhead */}
           <div style={{ textAlign: "center", paddingBottom: 16, borderBottom: "2px dashed #e5e7eb", marginBottom: 16 }}>
             <p style={{ fontSize: 16, fontWeight: 800, color: "#1B4332", fontFamily: "'Playfair Display', serif", margin: 0 }}>
-              🏛️ {auditoriumInfo.name || "Sharada Auditorium"}
+              🏛️ {venueInfo.name}
             </p>
-            <p style={{ fontSize: 11, color: "#6b7280", marginTop: 3 }}>{auditoriumInfo.location || "Taliparamba, Kannur, Kerala"}</p>
-            <p style={{ fontSize: 11, color: "#6b7280" }}>Ph: {auditoriumInfo.phone || "9447012345"} · GSTIN: {auditoriumInfo.gstin || auditoriumInfo.gst || "32AABCT3518Q1Z5"}</p>
+            <p style={{ fontSize: 11, color: "#6b7280", marginTop: 3 }}>{venueInfo.location}</p>
+            <p style={{ fontSize: 11, color: "#6b7280" }}>Ph: {venueInfo.phone} {venueInfo.gstin ? `· GSTIN: ${venueInfo.gstin}` : ""}</p>
           </div>
 
           {/* Invoice meta */}
@@ -147,9 +167,7 @@ export default function InvoiceModal({ booking, onClose }) {
           {/* Line items */}
           <div style={{ borderTop: "1px dashed #e5e7eb", paddingTop: 12, marginBottom: 12 }}>
             {[
-              { desc: `Hall Rental (${booking.hall}) — ${booking.session}`, amt: hallRental },
-              { desc: "Extra Chairs (50 nos @ ₹50)", amt: 2500 },
-              { desc: "Generator Backup", amt: 1000 },
+              { desc: `Hall Rental (${booking.hall}) — ${booking.session}`, amt: hallRental }
             ].map(item => (
               <div key={item.desc} style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 12, color: "#374151" }}>
                 <span>{item.desc}</span>

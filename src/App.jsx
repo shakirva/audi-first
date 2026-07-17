@@ -14,8 +14,13 @@ import Notifications from "./pages/Notifications";
 import Expenses from "./pages/Expenses";
 import PublicBooking from "./pages/PublicBooking";
 import Login from "./pages/Login";
+import SuperAdminTenants from "./pages/SuperAdminTenants";
 import { BookingsProvider } from "./context/BookingsContext";
 import { RoleProvider, useRole } from "./context/RoleContext";
+import { usePWA } from "./hooks/usePWA";
+import PWAInstallPrompt from "./components/PWAInstallPrompt";
+import PWAUpdatePrompt from "./components/PWAUpdatePrompt";
+import OfflineBanner from "./components/OfflineBanner";
 
 const pageTitles = {
   "/": "Dashboard",
@@ -38,14 +43,14 @@ function ProtectedRoute({ permission, children }) {
 function AdminLayout() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const title = pageTitles[location.pathname] || "HallMaster";
+  const title = pageTitles[location.pathname] || "Venueza";
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#F0F4EF", fontFamily: "'DM Sans', sans-serif" }}>
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
         <Header title={title} onMenuClick={() => setSidebarOpen(true)} />
-        <main style={{ flex: 1, padding: "24px", paddingBottom: 80, overflowY: "auto" }}>
+        <main className="hm-main-content" style={{ flex: 1, overflowY: "auto" }}>
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/bookings" element={<Bookings />} />
@@ -56,6 +61,7 @@ function AdminLayout() {
             <Route path="/expenses"  element={<ProtectedRoute permission="canViewReports"><Expenses /></ProtectedRoute>} />
             <Route path="/settings"  element={<ProtectedRoute permission="canViewSettings"><Settings /></ProtectedRoute>} />
             <Route path="/notifications" element={<Notifications />} />
+            <Route path="/superadmin/tenants" element={<ProtectedRoute permission="canManageTenants"><SuperAdminTenants /></ProtectedRoute>} />
           </Routes>
         </main>
       </div>
@@ -70,21 +76,32 @@ function AppGate() {
   if (!isLoggedIn) return <Login />;
   return (
     <Routes>
-      <Route path="/book" element={<PublicBooking />} />
+      <Route path="/book/:slug" element={<PublicBooking />} />
       <Route path="/*" element={<AdminLayout />} />
     </Routes>
   );
 }
 
+
+
 export default function App() {
+  const { isOnline, isInstallable, hasUpdate, installApp, applyUpdate, dismissUpdate } = usePWA();
+
   return (
-    <RoleProvider>
-      <BookingsProvider>
-        <Routes>
-          <Route path="/book" element={<PublicBooking />} />
-          <Route path="/*" element={<AppGate />} />
-        </Routes>
-      </BookingsProvider>
-    </RoleProvider>
+    <>
+      {!isOnline && <OfflineBanner />}
+      {isInstallable && <PWAInstallPrompt onInstall={installApp} onDismiss={() => {}} />}
+      {hasUpdate && <PWAUpdatePrompt onUpdate={applyUpdate} onDismiss={dismissUpdate} />}
+      
+      <RoleProvider>
+        <BookingsProvider>
+          <Routes>
+            <Route path="/book/:slug" element={<PublicBooking />} />
+            {/* Main app */}
+            <Route path="/*" element={<AppGate />} />
+          </Routes>
+        </BookingsProvider>
+      </RoleProvider>
+    </>
   );
 }

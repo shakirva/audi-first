@@ -1,47 +1,31 @@
 import { useState } from "react";
-import { Building2, Eye, EyeOff, LogIn, ShieldAlert } from "lucide-react";
+import { Eye, EyeOff, LogIn, ShieldAlert, Mail } from "lucide-react";
 import { useRole } from "../context/RoleContext";
-import { ROLE_COLORS } from "../context/rolePermissions";
-
-const ROLE_INFO = {
-  Owner: {
-    emoji: "👑",
-    name: "Rajan P.K.",
-    subtitle: "Full access — venue, revenue, team & all settings",
-    hint: "owner123",
-  },
-  Manager: {
-    emoji: "🧑‍💼",
-    name: "Suresh Kumar",
-    subtitle: "Bookings, calendar, customers & settings",
-    hint: "manager123",
-  },
-};
+import Logo from "../components/Logo";
 
 export default function Login() {
   const { login } = useRole();
-  const [selectedRole, setSelectedRole] = useState("Owner");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
+  const accentColor = "#D4A017";
+
+  const handleLogin = async () => {
     setError("");
+    if (!email.trim()) { setError("Please enter your email."); return; }
     if (!password.trim()) { setError("Please enter your password."); return; }
     setLoading(true);
-    setTimeout(() => {
-      const result = login(selectedRole, password);
-      if (!result.ok) {
-        setError(result.error);
-        setLoading(false);
-      }
-      // if ok, App.jsx re-renders to show dashboard
-    }, 400);
-  };
 
-  const rc = ROLE_COLORS[selectedRole];
-  const info = ROLE_INFO[selectedRole];
+    const result = await login(email.trim(), password);
+    if (!result.ok) {
+      setError(result.error);
+      setLoading(false);
+    }
+    // if ok, App.jsx re-renders to show dashboard
+  };
 
   return (
     <div style={{
@@ -58,16 +42,11 @@ export default function Login() {
 
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 36 }}>
-          <div style={{
-            width: 64, height: 64, borderRadius: 20,
-            background: "linear-gradient(135deg, #D4A017, #f0c040)",
-            display: "inline-flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 8px 30px rgba(212,160,23,0.35)", marginBottom: 16,
-          }}>
-            <Building2 size={30} color="#0D2418" />
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+            <Logo size={64} />
           </div>
           <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 800, color: "#fff", margin: "0 0 6px" }}>
-            HallMaster
+            Venueza
           </h1>
           <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", margin: 0 }}>
             Auditorium Management System
@@ -80,54 +59,40 @@ export default function Login() {
           borderRadius: 24, padding: 32, backdropFilter: "blur(20px)",
           boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
         }}>
-          <h2 style={{ fontSize: 17, fontWeight: 700, color: "#fff", margin: "0 0 20px", textAlign: "center" }}>
-            Sign in to your dashboard
+          <h2 style={{ fontSize: 17, fontWeight: 700, color: "#fff", margin: "0 0 6px", textAlign: "center" }}>
+            Sign In
           </h2>
+          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", margin: "0 0 24px", textAlign: "center" }}>
+            Enter your credentials to access the dashboard
+          </p>
 
-          {/* Role selector */}
-          <div style={{ marginBottom: 20 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 10 }}>Select Role</p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              {["Owner", "Manager"].map(r => {
-                const c = ROLE_COLORS[r];
-                const ri = ROLE_INFO[r];
-                const active = selectedRole === r;
-                return (
-                  <button
-                    key={r}
-                    onClick={() => { setSelectedRole(r); setPassword(""); setError(""); }}
-                    style={{
-                      padding: "14px 12px", borderRadius: 14, cursor: "pointer", textAlign: "left",
-                      border: `2px solid ${active ? c.dot : "rgba(255,255,255,0.1)"}`,
-                      background: active ? `rgba(${r === "Owner" ? "212,160,23" : "59,130,246"},0.12)` : "rgba(255,255,255,0.03)",
-                      transition: "all 0.18s",
-                    }}
-                  >
-                    <div style={{ fontSize: 22, marginBottom: 5 }}>{ri.emoji}</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: active ? c.dot : "rgba(255,255,255,0.6)" }}>{r}</div>
-                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 2, lineHeight: 1.4 }}>{ri.name}</div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Selected role info */}
-          <div style={{
-            background: `rgba(${selectedRole === "Owner" ? "212,160,23" : "59,130,246"},0.08)`,
-            border: `1px solid ${rc.dot}33`, borderRadius: 10, padding: "10px 14px", marginBottom: 20,
-            display: "flex", alignItems: "center", gap: 10,
-          }}>
-            <div style={{ fontSize: 20 }}>{info.emoji}</div>
-            <div>
-              <p style={{ fontSize: 12, fontWeight: 700, color: rc.dot, margin: 0 }}>{info.name} · {selectedRole}</p>
-              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", margin: "2px 0 0", lineHeight: 1.4 }}>{info.subtitle}</p>
-            </div>
+          {/* Email */}
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
+              <Mail size={11} /> Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={e => { setEmail(e.target.value); setError(""); }}
+              onKeyDown={e => e.key === "Enter" && handleLogin()}
+              placeholder="owner@venueza.com"
+              autoComplete="email"
+              style={{
+                width: "100%", padding: "12px 14px", borderRadius: 12,
+                border: `1.5px solid ${error ? "#C0392B" : "rgba(255,255,255,0.15)"}`,
+                background: "rgba(255,255,255,0.06)", color: "#fff", fontSize: 14,
+                outline: "none", fontFamily: "'DM Sans', sans-serif", boxSizing: "border-box",
+                transition: "border-color 0.15s",
+              }}
+              onFocus={e => { if (!error) e.target.style.borderColor = accentColor; }}
+              onBlur={e => { if (!error) e.target.style.borderColor = "rgba(255,255,255,0.15)"; }}
+            />
           </div>
 
           {/* Password */}
           <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 8 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
               Password
             </label>
             <div style={{ position: "relative" }}>
@@ -137,6 +102,7 @@ export default function Login() {
                 onChange={e => { setPassword(e.target.value); setError(""); }}
                 onKeyDown={e => e.key === "Enter" && handleLogin()}
                 placeholder="Enter password..."
+                autoComplete="current-password"
                 style={{
                   width: "100%", padding: "12px 44px 12px 14px", borderRadius: 12,
                   border: `1.5px solid ${error ? "#C0392B" : "rgba(255,255,255,0.15)"}`,
@@ -144,11 +110,12 @@ export default function Login() {
                   outline: "none", fontFamily: "'DM Sans', sans-serif", boxSizing: "border-box",
                   transition: "border-color 0.15s",
                 }}
-                onFocus={e => { if (!error) e.target.style.borderColor = rc.dot; }}
+                onFocus={e => { if (!error) e.target.style.borderColor = accentColor; }}
                 onBlur={e => { if (!error) e.target.style.borderColor = "rgba(255,255,255,0.15)"; }}
               />
               <button
                 onClick={() => setShowPass(v => !v)}
+                type="button"
                 style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.4)", padding: 0 }}
               >
                 {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -161,23 +128,21 @@ export default function Login() {
             )}
           </div>
 
-          {/* Demo hint */}
-          <div style={{ background: "rgba(212,160,23,0.07)", border: "1px dashed rgba(212,160,23,0.25)", borderRadius: 8, padding: "8px 12px", marginBottom: 20 }}>
-            <p style={{ fontSize: 11, color: "rgba(212,160,23,0.7)", margin: 0 }}>
-              🔑 <strong>Demo password:</strong> <code style={{ background: "rgba(255,255,255,0.1)", padding: "1px 6px", borderRadius: 4, fontSize: 12, fontWeight: 700, letterSpacing: "0.05em" }}>{info.hint}</code>
-            </p>
-          </div>
-
           {/* Login button */}
           <button
             onClick={handleLogin}
             disabled={loading}
             style={{
-              width: "100%", padding: "13px 0", borderRadius: 12, border: "none", cursor: loading ? "wait" : "pointer",
-              background: loading ? "rgba(212,160,23,0.5)" : "linear-gradient(135deg, #D4A017, #e8b820)",
-              color: "#0D2418", fontSize: 14, fontWeight: 800, fontFamily: "'DM Sans', sans-serif",
+              width: "100%", padding: "13px 0", borderRadius: 12, border: "none",
+              cursor: loading ? "not-allowed" : "pointer",
+              background: loading
+                ? "rgba(212,160,23,0.3)"
+                : "linear-gradient(135deg, #D4A017, #e8b820)",
+              color: "#0D2418",
+              fontSize: 14, fontWeight: 800, fontFamily: "'DM Sans', sans-serif",
               display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-              boxShadow: "0 4px 20px rgba(212,160,23,0.3)", transition: "all 0.15s",
+              boxShadow: "0 4px 20px rgba(212,160,23,0.3)",
+              transition: "all 0.15s",
             }}
           >
             {loading ? (
@@ -186,24 +151,38 @@ export default function Login() {
                 Signing in...
               </>
             ) : (
-              <><LogIn size={16} /> Sign In as {selectedRole}</>
+              <><LogIn size={16} /> Sign In</>
             )}
           </button>
-        </div>
 
-        {/* Staff note */}
-        <div style={{ marginTop: 20, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "14px 18px", display: "flex", alignItems: "flex-start", gap: 12 }}>
-          <ShieldAlert size={16} color="rgba(255,255,255,0.3)" style={{ flexShrink: 0, marginTop: 1 }} />
-          <div>
-            <p style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.4)", margin: "0 0 3px" }}>Staff members</p>
-            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", margin: 0, lineHeight: 1.5 }}>
-              Staff do not have dashboard access. Contact your Owner or Manager for assistance.
-            </p>
+          {/* Credential hints (for development only) */}
+          <div style={{ marginTop: 20, background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: "10px 14px", border: "1px solid rgba(255,255,255,0.06)" }}>
+            <p style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 6px" }}>Quick Login</p>
+            {[
+              { label: "👑 Owner", email: "owner@venueza.com", pass: "owner123" },
+              { label: "🧑‍💼 Manager", email: "manager@venueza.com", pass: "manager123" },
+            ].map(cred => (
+              <button key={cred.email}
+                onClick={() => { setEmail(cred.email); setPassword(cred.pass); }}
+                type="button"
+                style={{
+                  display: "block", width: "100%", textAlign: "left",
+                  padding: "6px 10px", borderRadius: 6, marginBottom: 4,
+                  background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)",
+                  color: "rgba(255,255,255,0.5)", fontSize: 11, cursor: "pointer",
+                  fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s",
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
+                onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.04)"}
+              >
+                {cred.label}: <span style={{ color: "rgba(212,160,23,0.7)" }}>{cred.email}</span>
+              </button>
+            ))}
           </div>
         </div>
 
         <p style={{ textAlign: "center", fontSize: 11, color: "rgba(255,255,255,0.2)", marginTop: 20 }}>
-          © 2026 HallMaster SaaS · Sreelakshmi Convention Centre
+          © 2026 Venueza SaaS · Sreelakshmi Convention Centre
         </p>
       </div>
 

@@ -9,6 +9,21 @@ body {
   background: #F0F4EF;
   color: #111827;
   line-height: 1.5;
+  /* PWA Safe Areas for iOS/Notches */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  /* Prevent pull-to-refresh on mobile */
+  overscroll-behavior-y: none;
+}
+
+/* Standalone PWA adjustments */
+@media (display-mode: standalone) {
+  body {
+    -webkit-user-select: none;
+    user-select: none;
+  }
 }
 
 h1, h2, h3, h4, h5 {
@@ -61,3 +76,315 @@ button, input, select, textarea {
   0%, 100% { box-shadow: 0 0 0 0 rgba(212,160,23,0.4); }
   50%       { box-shadow: 0 0 0 6px rgba(212,160,23,0); }
 }
+
+/* ═══════════════════════════════════════════════════════
+   DESKTOP RESPONSIVE UTILITIES
+   React inline styles don't support @media queries,
+   so we define responsive behavior with CSS classes.
+   ═══════════════════════════════════════════════════════ */
+
+/* Hamburger: hide on desktop (sidebar is always visible) */
+.hm-hamburger { display: flex; }
+@media (min-width: 1024px) {
+  .hm-hamburger { display: none !important; }
+}
+
+/* Desktop table vs Mobile card view */
+.hm-desktop-only { display: none; }
+.hm-mobile-only  { display: block; }
+@media (min-width: 768px) {
+  .hm-desktop-only { display: block !important; }
+  .hm-mobile-only  { display: none !important; }
+}
+
+/* Dashboard — Charts: side-by-side on desktop */
+.hm-charts-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+@media (min-width: 1024px) {
+  .hm-charts-grid {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+/* Dashboard — Bottom row: two columns on desktop */
+.hm-bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+@media (min-width: 1024px) {
+  .hm-bottom-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Settings page — wider on desktop */
+.hm-settings-container {
+  max-width: 100%;
+}
+@media (min-width: 1024px) {
+  .hm-settings-container {
+    max-width: 900px;
+  }
+}
+
+/* Stat cards — 2 cols mobile, auto on desktop */
+.hm-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+@media (min-width: 768px) {
+  .hm-stat-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
+/* Customer cards — grid layout on desktop */
+.hm-customer-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+@media (min-width: 1024px) {
+  .hm-customer-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+
+/* Customer card — desktop header vs mobile header */
+.hm-customer-desktop { display: none !important; }
+.hm-customer-mobile  { display: flex !important; }
+@media (min-width: 768px) {
+  .hm-customer-desktop { display: flex !important; }
+  .hm-customer-mobile  { display: none !important; }
+}
+
+/* Header avatar name — show on desktop */
+.hm-avatar-name { display: none; }
+@media (min-width: 768px) {
+  .hm-avatar-name { display: inline !important; }
+}
+
+/* Main content padding — more on desktop */
+.hm-main-content {
+  padding: 16px;
+  padding-bottom: 80px;
+}
+@media (min-width: 1024px) {
+  .hm-main-content {
+    padding: 28px 32px;
+    padding-bottom: 32px;
+  }
+}
+
+/* Login card — wider on desktop */
+.hm-login-card {
+  max-width: 420px;
+}
+@media (min-width: 1024px) {
+  .hm-login-card {
+    max-width: 440px;
+  }
+}
+
+/* Two-column grid for charts/reports on desktop */
+.hm-2col-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+@media (min-width: 768px) {
+  .hm-2col-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Payment history + sidebar on desktop */
+.hm-history-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+@media (min-width: 768px) {
+  .hm-history-grid {
+    grid-template-columns: 1fr 280px;
+  }
+}
+
+/* Expenses table grid */
+.hm-expenses-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr 120px 110px 90px;
+}
+
+/* Calendar layout — two columns on desktop */
+.hm-calendar-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  align-items: start;
+}
+@media (min-width: 1024px) {
+  .hm-calendar-layout {
+    grid-template-columns: 1fr 340px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   MOBILE FIRST OPTIMIZATIONS (ADDED)
+   ═══════════════════════════════════════════════════════ */
+
+/* Buttons & Inputs - Touch Targets */
+.touch-btn {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: 10px;
+  touch-action: manipulation;
+}
+
+.touch-input {
+  min-height: 44px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 16px !important; /* Prevents iOS zoom */
+}
+
+/* Base Spacing for mobile */
+.hm-section {
+  padding: 12px;
+}
+@media (min-width: 768px) {
+  .hm-section { padding: 24px; }
+}
+
+/* Flex Mobile Stack */
+.hm-stack-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+@media (min-width: 768px) {
+  .hm-stack-mobile {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+/* Charts responsive */
+.recharts-responsive-container {
+  min-height: 250px !important;
+}
+
+/* Hide trend badges on mobile to prevent cramping */
+@media (max-width: 767px) {
+  .hm-trend-badge {
+    display: none !important;
+  }
+}
+
+/* Dashboard reordering for mobile */
+.hm-dashboard-main {
+  display: flex;
+  flex-direction: column;
+}
+@media (max-width: 1023px) {
+  .hm-dashboard-main {
+    display: flex;
+    flex-direction: column;
+  }
+  .hm-charts-grid { order: 2; margin-top: 16px; }
+  .hm-bottom-grid { order: 1; margin-bottom: 0px; }
+  .hm-mobile-chart { min-height: 220px !important; height: 220px !important; }
+}
+
+@media (max-width: 767px) {
+  /* Smaller font for chart labels on mobile */
+  .recharts-text {
+    font-size: 9px !important;
+  }
+}
+
+/* Mobile Sidebar Drawer overlay */
+.hm-sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 40;
+  display: none;
+}
+.hm-sidebar-overlay.active {
+  display: block;
+}
+
+/* Mobile Drawer transition */
+.hm-sidebar {
+  position: fixed;
+  left: -280px;
+  top: 0;
+  bottom: 0;
+  width: 260px;
+  z-index: 50;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hm-sidebar.active {
+  transform: translateX(280px);
+}
+@media (min-width: 1024px) {
+  .hm-sidebar {
+    position: static;
+    left: 0;
+    transform: none !important;
+    transition: none;
+  }
+  .hm-sidebar-overlay { display: none !important; }
+}
+
+/* Cards */
+.hm-card {
+  padding: 16px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+@media (min-width: 768px) {
+  .hm-card { padding: 24px; border-radius: 16px; }
+}
+
+/* hm-header */
+.hm-header {
+  padding: 8px 12px;
+}
+@media (min-width: 768px) {
+  .hm-header { padding: 12px 24px; }
+}
+
+/* hm-table-wrapper */
+.hm-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -12px;
+  padding: 0 12px;
+}
+@media (min-width: 768px) {
+  .hm-table-wrapper { margin: 0; padding: 0; }
+}
+
+/* Typography responsiveness */
+.hm-page-title {
+  font-size: 18px;
+}
+@media (min-width: 768px) {
+  .hm-page-title { font-size: 20px; }
+}
+

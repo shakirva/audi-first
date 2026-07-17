@@ -3,7 +3,6 @@ import {
   ResponsiveContainer, CartesianGrid, Cell,
 } from "recharts";
 import { useState } from "react";
-import { bookings as _unused, monthlyRevenue, eventTypes, weekdayBookings, hallUtilization, auditoriumInfo } from "../data/dummyData";
 import { Download } from "lucide-react";
 import { useToast } from "../components/Toast";
 import { useBookings } from "../context/BookingsContext";
@@ -16,7 +15,10 @@ const PEAK_DAYS = ["Sat", "Sun", "Fri"];
 
 // ── PDF generators ──
 function printHTML(title, bodyHTML) {
+  const name = "Sreelakshmi Convention Centre";
+  const location = "Kerala, India";
   const w = window.open("", "_blank");
+  if (!w) return;
   w.document.write(`<!DOCTYPE html><html><head><title>${title}</title>
   <style>
     body{font-family:'Segoe UI',sans-serif;margin:0;padding:24px;color:#111;font-size:13px}
@@ -34,10 +36,10 @@ function printHTML(title, bodyHTML) {
     .footer{margin-top:24px;font-size:11px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:12px}
     @media print{body{padding:12px}}
   </style></head><body>
-  <h1>${auditoriumInfo.name}</h1>
-  <div class="sub">📍 ${auditoriumInfo.location || "Kerala, India"} &nbsp;|&nbsp; Generated: ${new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}</div>
+  <h1>${name}</h1>
+  <div class="sub">📍 ${location} &nbsp;|&nbsp; Generated: ${new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}</div>
   ${bodyHTML}
-  <div class="footer">HallMaster — ${auditoriumInfo.name} | Confidential Report</div>
+  <div class="footer">Venueza — ${name} | Confidential Report</div>
   <script>window.onload=()=>{window.print();}<` + `/script>
   </body></html>`);
   w.document.close();
@@ -66,7 +68,17 @@ function downloadBookingReport(bookings) {
     </table>`);
 }
 
-function downloadRevenueReport() {
+function downloadRevenueReport(bookings) {
+  // Compute monthly revenue dynamically
+  const revenueMap = {};
+  bookings.forEach(b => {
+    if (b.status === "Confirmed" || b.status === "Completed") {
+      const m = new Date(b.date).toLocaleString('default', { month: 'short', year: '2-digit' });
+      revenueMap[m] = (revenueMap[m] || 0) + b.totalAmount;
+    }
+  });
+  const monthlyRevenue = Object.keys(revenueMap).map(m => ({ month: m, revenue: revenueMap[m] }));
+  
   const rows = monthlyRevenue.map(m => `
     <tr>
       <td>${m.month}</td>
@@ -122,12 +134,12 @@ function downloadHallReport(bookings) {
       <td style="text-align:center">${h.bookings}</td>
       <td style="font-weight:700;color:#1B4332">₹${h.revenue.toLocaleString()}</td>
       <td>₹${Math.round(h.revenue/h.bookings).toLocaleString()}</td>
-      <td>${hallUtilization.find(u=>u.hall===h.name)?.pct || "N/A"}%</td>
+      <td>${Math.round((h.bookings / bookings.length) * 100) || 0}%</td>
     </tr>`).join("");
   printHTML("Hall Usage Report", `
     <h2 style="font-size:16px;margin:0 0 12px">🏛️ Hall Usage Report</h2>
     <table>
-      <thead><tr><th>Hall</th><th>Total Bookings</th><th>Revenue</th><th>Avg per Booking</th><th>Utilization</th></tr></thead>
+      <thead><tr><th>Hall</th><th>Total Bookings</th><th>Revenue</th><th>Avg per Booking</th><th>Share of Bookings</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>`);
 }
@@ -137,8 +149,9 @@ export default function Reports() {
   const { addToast } = useToast();
   const { bookings: ctxBookings } = useBookings();
 
-  const defaultFrom = `${new Date().getFullYear()}-01-01`;
-  const defaultTo = new Date().toISOString().split("T")[0];
+  const currentYear = new Date().getFullYear();
+  const defaultFrom = `${currentYear}-01-01`;
+  const defaultTo = `${currentYear}-12-31`;
   const [fromDate, setFromDate] = useState(defaultFrom);
   const [toDate, setToDate] = useState(defaultTo);
 
@@ -147,20 +160,36 @@ export default function Reports() {
   const totalRevenue = bookings.filter(b => b.status === "Confirmed" || b.status === "Completed").reduce((s, b) => s + b.totalAmount, 0);
   const confirmed    = bookings.filter(b => b.status === "Confirmed").length || 1; // avoid /0
 
-  const peakData = (weekdayBookings || WEEKDAYS.map((d) => ({ day: d, bookings: 5 }))).map(d => ({
-    ...d,
-    peak: PEAK_DAYS.includes(d.day),
-  }));
+  const peakData = WEEKDAYS.map(day => {
+    const bCount = bookings.filter(b => new Date(b.date).toLocaleString('en-US', { weekday: 'short' }) === day).length;
+    return { day, bookings: bCount, peak: PEAK_DAYS.includes(day) };
+  });
 
-  const hallData = hallUtilization || [
-    { hall: "Main Hall",   pct: 88 },
-    { hall: "Garden Hall", pct: 71 },
-    { hall: "Mini Hall",   pct: 55 },
-  ];
+  const hallMap = {};
+  bookings.forEach(b => hallMap[b.hall] = (hallMap[b.hall] || 0) + 1);
+  const hallData = Object.keys(hallMap).map(h => ({ hall: h, pct: Math.round((hallMap[h]/bookings.length)*100) }));
+
+  const eventTypeMap = {};
+  bookings.forEach(b => eventTypeMap[b.eventType] = (eventTypeMap[b.eventType] || 0) + 1);
+  const eventTypes = Object.keys(eventTypeMap).map(e => ({ name: e, value: eventTypeMap[e] }));
+
+  const revenueMap = {};
+  bookings.forEach(b => {
+    if (b.status === "Confirmed" || b.status === "Completed") {
+      const monthStr = new Date(b.date).toLocaleString('default', { month: 'short' });
+      revenueMap[monthStr] = (revenueMap[monthStr] || 0) + b.totalAmount;
+    }
+  });
+  const monthlyRevenue = [];
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(currentYear, i, 1);
+    const m = d.toLocaleString('default', { month: 'short' });
+    monthlyRevenue.push({ month: m, revenue: revenueMap[m] || 0 });
+  }
 
   const reportCards = [
     { title: "Booking Report",   desc: "All bookings with details, status & revenue", icon: "📋", color: "#1B4332", onDownload: () => downloadBookingReport(bookings) },
-    { title: "Revenue Report",   desc: "Monthly revenue breakdown & GST summary",     icon: "💰", color: "#D4A017", onDownload: downloadRevenueReport },
+    { title: "Revenue Report",   desc: "Monthly revenue breakdown & GST summary",     icon: "💰", color: "#D4A017", onDownload: () => downloadRevenueReport(bookings) },
     { title: "Customer Report",  desc: "Customer list with booking history",           icon: "👥", color: "#2563eb", onDownload: () => downloadCustomerReport(bookings) },
     { title: "Hall Usage Report",desc: "Hall-wise utilization & peak time analysis",  icon: "🏛️", color: "#7c3aed", onDownload: () => downloadHallReport(bookings) },
   ];
@@ -189,7 +218,7 @@ export default function Reports() {
       </div>
 
       {/* ── SUMMARY STATS ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 10, marginBottom: 14 }}>
+      <div className="hm-stat-grid">
         {[
           { label: "Total Bookings",  value: bookings.length,     color: "#1B4332", bg: "#f0faf4", icon: "📅" },
           { label: "Confirmed",       value: confirmed - 1,        color: "#15803d", bg: "#dcfce7", icon: "✅" },
@@ -207,7 +236,7 @@ export default function Reports() {
       </div>
 
       {/* ── CHARTS ROW ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr", "@media (minWidth: 768px)": { gridTemplateColumns: "1fr 1fr" }, gap: 12, marginBottom: 12 }}>
+      <div className="hm-2col-grid" style={{ marginBottom: 12 }}>
 
         {/* Revenue Trend */}
         <div style={card}>
@@ -252,7 +281,7 @@ export default function Reports() {
       </div>
 
       {/* ── UTILIZATION + EVENT TYPES ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr", "@media (minWidth: 768px)": { gridTemplateColumns: "1fr 1fr" }, gap: 12, marginBottom: 12 }}>
+      <div className="hm-2col-grid" style={{ marginBottom: 12 }}>
 
         {/* Hall Utilization */}
         <div style={card}>

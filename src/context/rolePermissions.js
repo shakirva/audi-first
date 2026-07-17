@@ -1,7 +1,7 @@
 // Permission matrix — keep in a separate file to satisfy Fast Refresh rules
 
 // Roles: "Owner" | "Manager"  (Staff has no dashboard)
-export const ROLES = ["Owner", "Manager", "Staff"];
+export const ROLES = ["SuperAdmin", "Owner", "Manager", "Staff", "Tester"];
 
 // Hardcoded demo credentials (Owner & Manager only)
 export const CREDENTIALS = {
@@ -10,12 +10,24 @@ export const CREDENTIALS = {
 };
 
 export const ROLE_COLORS = {
+  SuperAdmin: { bg: "#fce7f3", text: "#9d174d", dot: "#ec4899" },
   Owner:   { bg: "#fef3c7", text: "#92400e", dot: "#D4A017" },
   Manager: { bg: "#dbeafe", text: "#1e40af", dot: "#3b82f6" },
   Staff:   { bg: "#f3f4f6", text: "#374151", dot: "#9ca3af" },
+  Tester:  { bg: "#f3e8ff", text: "#7e22ce", dot: "#a855f7" },
 };
 
 export const PERMISSIONS = {
+  SuperAdmin: {
+    canViewRevenue:   true,
+    canViewPayments:  true,
+    canViewReports:   true,
+    canViewSettings:  true,
+    canAddBooking:    true,
+    canEditBooking:   true,
+    canDeleteBooking: true,
+    canManageTenants: true,
+  },
   Owner: {
     canViewRevenue:   true,
     canViewPayments:  true,
@@ -24,6 +36,7 @@ export const PERMISSIONS = {
     canAddBooking:    true,
     canEditBooking:   true,
     canDeleteBooking: true,
+    canManageTenants: false,
   },
   Manager: {
     canViewRevenue:   true,   // overridden dynamically by owner toggle
@@ -33,6 +46,7 @@ export const PERMISSIONS = {
     canAddBooking:    true,
     canEditBooking:   true,
     canDeleteBooking: false,
+    canManageTenants: false,
   },
   Staff: {
     canViewRevenue:   false,
@@ -42,5 +56,16 @@ export const PERMISSIONS = {
     canAddBooking:    false,
     canEditBooking:   false,
     canDeleteBooking: false,
+    canManageTenants: false,
+  },
+  Tester: {
+    canViewRevenue:   true,
+    canViewPayments:  true,
+    canViewReports:   true,
+    canViewSettings:  true,
+    canAddBooking:    true,
+    canEditBooking:   true,
+    canDeleteBooking: true,
+    canManageTenants: false,
   },
 };

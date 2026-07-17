@@ -1,26 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Wallet, Plus, Trash2, Pencil, X, Check, TrendingDown,
   Users, Wrench, Zap, UtensilsCrossed, MoreHorizontal, ChevronDown,
 } from "lucide-react";
-
-/* ── Dummy initial expenses ── */
-const INITIAL_EXPENSES = [
-  { id: 1,  category: "Staff Salaries",  description: "Hall Manager – Rajan P.K.",         amount: 35000, date: "2026-04-01", recurring: true  },
-  { id: 2,  category: "Staff Salaries",  description: "Caretaker – Suresh Kumar",            amount: 18000, date: "2026-04-01", recurring: true  },
-  { id: 3,  category: "Staff Salaries",  description: "Security Guard (2 staff)",             amount: 24000, date: "2026-04-01", recurring: true  },
-  { id: 4,  category: "Staff Salaries",  description: "Cleaning Staff (3 members)",           amount: 21000, date: "2026-04-01", recurring: true  },
-  { id: 5,  category: "Maintenance",     description: "AC Service – Main Hall",               amount: 8500,  date: "2026-04-05", recurring: false },
-  { id: 6,  category: "Maintenance",     description: "Generator Fuel & Service",             amount: 12000, date: "2026-04-08", recurring: false },
-  { id: 7,  category: "Maintenance",     description: "Electrical Repair – Stage Lights",     amount: 4500,  date: "2026-04-14", recurring: false },
-  { id: 8,  category: "Utilities",       description: "Electricity Bill – April",             amount: 22000, date: "2026-04-10", recurring: true  },
-  { id: 9,  category: "Utilities",       description: "Water Bill – April",                   amount: 3500,  date: "2026-04-10", recurring: true  },
-  { id: 10, category: "Utilities",       description: "Internet & Phone",                     amount: 1800,  date: "2026-04-10", recurring: true  },
-  { id: 11, category: "Catering Prep",   description: "Catering Equipment Restock",           amount: 6500,  date: "2026-04-18", recurring: false },
-  { id: 12, category: "Miscellaneous",   description: "Office Supplies & Stationery",         amount: 2200,  date: "2026-04-20", recurring: false },
-  { id: 13, category: "Miscellaneous",   description: "Flower Decoration (event support)",    amount: 3800,  date: "2026-04-22", recurring: false },
-  { id: 14, category: "Maintenance",     description: "Plumbing Repair – Restrooms",          amount: 5500,  date: "2026-04-26", recurring: false },
-];
+import { expensesAPI, settingsAPI } from "../services/api";
 
 const CATEGORIES = [
   { label: "Staff Salaries",  icon: Users,          color: "#4f46e5", bg: "#eef2ff" },
@@ -32,24 +15,51 @@ const CATEGORIES = [
 
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-const catMeta = (label) => CATEGORIES.find(c => c.label === label) || CATEGORIES[4];
+const DEFAULT_COLORS = [
+  { color: "#4f46e5", bg: "#eef2ff" },
+  { color: "#d97706", bg: "#fffbeb" },
+  { color: "#0891b2", bg: "#ecfeff" },
+  { color: "#059669", bg: "#ecfdf5" },
+  { color: "#e11d48", bg: "#fff1f2" },
+  { color: "#7c3aed", bg: "#f5f3ff" },
+  { color: "#c026d3", bg: "#fdf4ff" },
+];
 
 function formatINR(n) {
   return "₹" + Number(n).toLocaleString("en-IN");
 }
 
-const EMPTY_FORM = { category: "Staff Salaries", description: "", amount: "", date: new Date().toISOString().split("T")[0], recurring: false };
+const EMPTY_FORM = (firstCat) => ({
+  category: firstCat || "",
+  description: "",
+  amount: "",
+  date: new Date().toISOString().split("T")[0],
+  recurring: false,
+});
 
 export default function Expenses() {
   const now = new Date();
-  const [expenses, setExpenses]       = useState(INITIAL_EXPENSES);
+  const [expenses, setExpenses]       = useState([]);
+  const [loading, setLoading]         = useState(true);
   const [filterCat, setFilterCat]     = useState("All");
-  const [filterMonth, setFilterMonth] = useState(now.getMonth()); // 0-based
+  const [filterMonth, setFilterMonth] = useState(now.getMonth());
   const [filterYear, setFilterYear]   = useState(now.getFullYear());
   const [showModal, setShowModal]     = useState(false);
   const [editId, setEditId]           = useState(null);
-  const [form, setForm]               = useState(EMPTY_FORM);
+  const [form, setForm]               = useState(EMPTY_FORM(""));
   const [deleteId, setDeleteId]       = useState(null);
+  const [categories, setCategories]   = useState([]);
+
+  const dynamicCategories = useMemo(() => {
+    return categories.map((c, i) => {
+      const existing = CATEGORIES.find(x => x.label === c);
+      if (existing) return existing;
+      const theme = DEFAULT_COLORS[i % DEFAULT_COLORS.length];
+      return { label: c, icon: MoreHorizontal, color: theme.color, bg: theme.bg };
+    });
+  }, [categories]);
+
+  const catMeta = (label) => dynamicCategories.find(c => c.label === label) || { label, icon: MoreHorizontal, color: "#9ca3af", bg: "#f3f4f6" };
 
   /* ── Filtered list ── */
   const monthStr = `${filterYear}-${String(filterMonth + 1).padStart(2, "0")}`;
@@ -64,29 +74,66 @@ export default function Expenses() {
 
   /* ── Summary cards ── */
   const totalFiltered = filtered.reduce((s, e) => s + Number(e.amount), 0);
-  const byCat = CATEGORIES.map(c => ({
+  const byCat = dynamicCategories.map(c => ({
     ...c,
     total: filtered.filter(e => e.category === c.label).reduce((s, e) => s + Number(e.amount), 0),
   }));
 
+  // Load settings once on mount
+  useEffect(() => {
+    settingsAPI.get().then(res => {
+      if (res.data.expenseCategories && res.data.expenseCategories.length > 0) {
+        setCategories(res.data.expenseCategories);
+        setForm(EMPTY_FORM(res.data.expenseCategories[0]));
+      }
+    }).catch(console.error);
+  }, []);
+
+  // Reload expenses when month/year changes
+  useEffect(() => {
+    fetchExpenses();
+  }, [filterMonth, filterYear]);
+
+  const fetchExpenses = async () => {
+    setLoading(true);
+    try {
+      const { data } = await expensesAPI.getAll({ month: monthStr });
+      setExpenses(data);
+    } catch (err) {
+      console.error("Failed to fetch expenses", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   /* ── Handlers ── */
-  const openAdd  = () => { setForm(EMPTY_FORM); setEditId(null); setShowModal(true); };
+  const openAdd  = () => { setForm(EMPTY_FORM(categories[0] || "")); setEditId(null); setShowModal(true); };
   const openEdit = (exp) => { setForm({ ...exp }); setEditId(exp.id); setShowModal(true); };
   const closeModal = () => { setShowModal(false); setEditId(null); };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.description.trim() || !form.amount || !form.date) return;
-    if (editId) {
-      setExpenses(prev => prev.map(e => e.id === editId ? { ...form, id: editId, amount: Number(form.amount) } : e));
-    } else {
-      setExpenses(prev => [...prev, { ...form, id: Date.now(), amount: Number(form.amount) }]);
+    try {
+      if (editId) {
+        await expensesAPI.update(editId, form);
+      } else {
+        await expensesAPI.create(form);
+      }
+      fetchExpenses();
+      closeModal();
+    } catch (err) {
+      console.error("Save failed", err);
     }
-    closeModal();
   };
 
-  const handleDelete = (id) => {
-    setExpenses(prev => prev.filter(e => e.id !== id));
-    setDeleteId(null);
+  const handleDelete = async (id) => {
+    try {
+      await expensesAPI.remove(id);
+      fetchExpenses();
+      setDeleteId(null);
+    } catch (err) {
+      console.error("Delete failed", err);
+    }
   };
 
   /* ── Month navigation ── */
@@ -153,7 +200,7 @@ export default function Expenses() {
 
       {/* ── Filters ── */}
       <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-        {["All", ...CATEGORIES.map(c => c.label)].map(cat => (
+        {["All", ...dynamicCategories.map(c => c.label)].map(cat => (
           <button key={cat} onClick={() => setFilterCat(cat)} style={{
             padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600,
             border: filterCat === cat ? "none" : "1px solid #e5e7eb",
@@ -167,13 +214,19 @@ export default function Expenses() {
       {/* ── Expense Table ── */}
       <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 2px 16px rgba(0,0,0,0.06)", overflow: "hidden" }}>
         {/* Table header */}
-        <div style={{ display: "none", gridTemplateColumns: "1fr 2fr 120px 110px 90px", padding: "12px 16px", background: "#f9fafb", borderBottom: "1px solid #f3f4f6", "@media (minWidth: 768px)": { display: "grid" } }}>
+        <div className="hm-expenses-grid hm-desktop-only" style={{ padding: "12px 16px", background: "#f9fafb", borderBottom: "1px solid #f3f4f6" }}>
           {["Category", "Description", "Amount", "Date", "Actions"].map(h => (
             <span key={h} style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: 0.5 }}>{h}</span>
           ))}
         </div>
 
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div style={{ padding: "48px 16px", textAlign: "center" }}>
+            <div style={{ width: 36, height: 36, border: "3px solid #e5e7eb", borderTopColor: "#1B4332", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
+            <p style={{ fontSize: 13, color: "#9ca3af" }}>Loading expenses...</p>
+            <style>{"@keyframes spin { to { transform: rotate(360deg) } }"}</style>
+          </div>
+        ) : filtered.length === 0 ? (
           <div style={{ padding: "40px 16px", textAlign: "center" }}>
             <p style={{ fontSize: 28, marginBottom: 8 }}>💰</p>
             <p style={{ fontSize: 13, color: "#9ca3af" }}>No expenses recorded for this period</p>
@@ -184,13 +237,12 @@ export default function Expenses() {
         ) : (
           <>
             {/* Desktop view */}
-            <div style={{ display: "none", "@media (minWidth: 768px)": { display: "block" } }}>
+            <div className="hm-desktop-only">
               {filtered.map((exp, idx) => {
                 const meta = catMeta(exp.category);
                 const Icon = meta.icon;
                 return (
-                  <div key={exp.id} style={{
-                    display: "grid", gridTemplateColumns: "1fr 2fr 120px 110px 90px",
+                  <div key={exp.id} className="hm-expenses-grid" style={{
                     padding: "11px 16px", borderBottom: idx < filtered.length - 1 ? "1px solid #f9fafb" : "none",
                     alignItems: "center", transition: "background 0.12s",
                   }}
@@ -234,7 +286,8 @@ export default function Expenses() {
             </div>
 
             {/* Mobile card view */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 12, "@media (minWidth: 768px)": { display: "none" } }}>
+            <div className="hm-mobile-only">
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 12 }}>
               {filtered.map(exp => {
                 const meta = catMeta(exp.category);
                 const Icon = meta.icon;
@@ -251,7 +304,7 @@ export default function Expenses() {
                       <span style={{ fontSize: 11, fontWeight: 800, color: "#1B4332", background: "#F0F4EF", padding: "2px 8px", borderRadius: 6, flexShrink: 0, whiteSpace: "nowrap" }}>{formatINR(exp.amount)}</span>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10, color: "#9ca3af", marginBottom: 8 }}>
-                      <span>{new Date(exp.date).toLocaleDateString("en-IN", { day: "short", month: "short", year: "2-digit" })}</span>
+                      <span>{new Date(exp.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit" })}</span>
                       {exp.recurring && <span>🔁 recurring</span>}
                     </div>
                     <div style={{ display: "flex", gap: 6 }}>
@@ -265,13 +318,14 @@ export default function Expenses() {
                   </div>
                 );
               })}
+              </div>
             </div>
           </>
         )}
 
         {/* Total row */}
         {filtered.length > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr 120px 110px 90px", padding: "12px 20px", background: "#f9fafb", borderTop: "2px solid #e5e7eb" }}>
+          <div className="hm-expenses-grid hm-desktop-only" style={{ padding: "12px 20px", background: "#f9fafb", borderTop: "2px solid #e5e7eb" }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: "#374151", gridColumn: "1 / span 2" }}>TOTAL ({filtered.length} entries)</span>
             <span style={{ fontSize: 14, fontWeight: 800, color: "#D4A017" }}>{formatINR(totalFiltered)}</span>
           </div>
@@ -296,7 +350,7 @@ export default function Expenses() {
             <label style={labelStyle}>Category</label>
             <div style={{ position: "relative" }}>
               <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} style={inputStyle}>
-                {CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}
+                {dynamicCategories.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}
               </select>
               <ChevronDown size={14} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", color: "#9ca3af", pointerEvents: "none" }} />
             </div>

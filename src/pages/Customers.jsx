@@ -65,7 +65,7 @@ export default function Customers() {
       </div>
 
       {/* Customer Cards */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div className="hm-customer-grid">
         {filtered.map(c => {
           const isOpen = expanded === c.phone;
           const totalSpent = c.bookings.filter(b => b.status === "Confirmed" || b.status === "Completed").reduce((s, b) => s + b.totalAmount, 0);
@@ -75,7 +75,7 @@ export default function Customers() {
           return (
             <div key={c.phone} style={{ background: "#fff", borderRadius: 10, boxShadow: "0 1px 6px rgba(0,0,0,0.05)", overflow: "hidden", border: "1px solid #f3f4f6" }}>
               {/* Card header - Desktop view */}
-              <div style={{ display: "none", "@media (minWidth: 768px)": { display: "flex" }, alignItems: "center", gap: 12, padding: "14px 16px", cursor: "pointer", backgroundColor: "#fafafa" }}
+              <div className="hm-customer-desktop" style={{ alignItems: "center", gap: 12, padding: "14px 16px", cursor: "pointer", backgroundColor: "#fafafa" }}
                 onClick={() => toggle(c.phone)}
               >
                 {/* Avatar */}
@@ -121,7 +121,7 @@ export default function Customers() {
               </div>
 
               {/* Card header - Mobile view */}
-              <div style={{ display: "flex", "@media (minWidth: 768px)": { display: "none" }, alignItems: "center", gap: 10, padding: "12px 12px", cursor: "pointer", backgroundColor: "#fafafa" }}
+              <div className="hm-customer-mobile" style={{ alignItems: "center", gap: 10, padding: "12px 12px", cursor: "pointer", backgroundColor: "#fafafa" }}
                 onClick={() => toggle(c.phone)}
               >
                 {/* Avatar */}

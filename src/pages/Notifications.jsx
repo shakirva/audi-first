@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Bell, CheckCheck, Trash2, AlertTriangle, Info, Clock, IndianRupee, Calendar } from "lucide-react";
 import { useBookings } from "../context/BookingsContext";
 
@@ -12,63 +12,71 @@ const TYPE_CONFIG = {
   booking:  { icon: Calendar,      color: "#7c3aed", bg: "#f5f3ff", label: "Booking" },
 };
 
-function buildNotifications(bookings) {
-  const items = [];
-
-  // Pending payments
-  bookings.filter(b => b.status === "Pending Payment").forEach(b => {
-    const balance = b.totalAmount - Number(b.advance ?? b.advancePaid ?? 0);
-    items.push({
-      id: `pay-${b.id}`,
-      type: "payment",
-      title: "Balance Payment Due",
-      message: `${b.customerName} owes ₹${balance.toLocaleString()} for ${b.eventType} on ${new Date(b.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`,
-      time: "Pending",
-      read: false,
-    });
-  });
-
-  // Upcoming events in next 3 days
-  const soon = new Date(); soon.setDate(soon.getDate() + 3);
-  const soonStr = soon.toISOString().split("T")[0];
-  bookings.filter(b => b.date >= todayStr && b.date <= soonStr && b.status !== "Cancelled").forEach(b => {
-    items.push({
-      id: `evt-${b.id}`,
-      type: "reminder",
-      title: "Upcoming Event",
-      message: `${b.eventType} for ${b.customerName} at ${b.hall} — ${new Date(b.date).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })} (${b.session})`,
-      time: b.date === todayStr ? "Today" : "In 1-3 days",
-      read: false,
-    });
-  });
-
-  // Enquiries
-  bookings.filter(b => b.status === "Enquiry").forEach(b => {
-    items.push({
-      id: `enq-${b.id}`,
-      type: "info",
-      title: "New Enquiry",
-      message: `${b.customerName} has an enquiry for ${b.eventType} on ${new Date(b.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`,
-      time: "Recent",
-      read: false,
-    });
-  });
-
-  // Static notifications for showcase
-  items.push(
-    { id: "s1", type: "info",    title: "System Update",    message: "HallMaster has been updated to v2.4.1 — New invoice templates & WhatsApp sharing added.", time: "2h ago",  read: true },
-    { id: "s2", type: "warning", title: "Low Advance Alert", message: "3 bookings have advance below ₹2,000. Consider sending reminders.", time: "5h ago",  read: true },
-    { id: "s3", type: "booking", title: "Booking Confirmed", message: "Booking BK003 for Priya & Vishnu has been confirmed successfully.", time: "Yesterday", read: true },
-    { id: "s4", type: "payment", title: "Payment Received",  message: "Full payment received from St. Mary's Church — ₹8,000.", time: "2 days ago", read: true },
-  );
-
-  return items;
-}
-
 export default function Notifications() {
   const { bookings } = useBookings();
   const [filter, setFilter] = useState("All");
-  const [items, setItems] = useState(() => buildNotifications(bookings));
+  
+  // Track dynamically which notifications have been read or dismissed
+  const [readIds, setReadIds] = useState(new Set());
+  const [removedIds, setRemovedIds] = useState(new Set());
+
+  const items = useMemo(() => {
+    const arr = [];
+    
+    // 1. Pending Payments
+    bookings.filter(b => b.status === "Pending Payment").forEach(b => {
+      const advance = Number(b.advance ?? b.advancePaid ?? 0);
+      const balance = b.totalAmount - advance;
+      arr.push({
+        id: `pay-${b.id}`,
+        type: "payment",
+        title: "Balance Payment Due",
+        message: `${b.customerName} owes ₹${balance.toLocaleString()} for ${b.eventType} on ${new Date(b.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`,
+        time: "Pending",
+      });
+    });
+
+    // 2. Upcoming events in next 3 days
+    const soon = new Date(); soon.setDate(soon.getDate() + 3);
+    const soonStr = soon.toISOString().split("T")[0];
+    bookings.filter(b => b.date >= todayStr && b.date <= soonStr && b.status !== "Cancelled").forEach(b => {
+      arr.push({
+        id: `evt-${b.id}`,
+        type: "reminder",
+        title: "Upcoming Event",
+        message: `${b.eventType} for ${b.customerName} at ${b.hall} — ${new Date(b.date).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })} (${b.session})`,
+        time: b.date === todayStr ? "Today" : "In 1-3 days",
+      });
+    });
+
+    // 3. New Enquiries
+    bookings.filter(b => b.status === "Enquiry").forEach(b => {
+      arr.push({
+        id: `enq-${b.id}`,
+        type: "info",
+        title: "New Enquiry",
+        message: `${b.customerName} has an enquiry for ${b.eventType} on ${new Date(b.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`,
+        time: "Recent",
+      });
+    });
+
+    // 4. Low Advance Alert (Warning)
+    const lowAdvance = bookings.filter(b => b.status === "Pending Payment" && b.advance > 0 && b.advance < 2000);
+    if (lowAdvance.length > 0) {
+      arr.push({
+        id: `warn-low-adv`,
+        type: "warning",
+        title: "Low Advance Alert",
+        message: `${lowAdvance.length} booking(s) have advance below ₹2,000. Consider sending reminders.`,
+        time: "Ongoing",
+      });
+    }
+
+    // Apply read/removed state
+    return arr
+      .filter(n => !removedIds.has(n.id))
+      .map(n => ({ ...n, read: readIds.has(n.id) }));
+  }, [bookings, readIds, removedIds]);
 
   const FILTERS = ["All", "Unread", "Payment", "Reminder", "Info", "Warning", "Booking"];
 
@@ -78,9 +86,23 @@ export default function Notifications() {
     return n.type === filter.toLowerCase();
   });
 
-  const markAllRead = () => setItems(prev => prev.map(n => ({ ...n, read: true })));
-  const markRead = (id) => setItems(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-  const remove = (id) => setItems(prev => prev.filter(n => n.id !== id));
+  const markAllRead = () => {
+    const newRead = new Set(readIds);
+    items.forEach(i => newRead.add(i.id));
+    setReadIds(newRead);
+  };
+
+  const markRead = (id) => {
+    const newRead = new Set(readIds);
+    newRead.add(id);
+    setReadIds(newRead);
+  };
+
+  const remove = (id) => {
+    const newRemoved = new Set(removedIds);
+    newRemoved.add(id);
+    setRemovedIds(newRemoved);
+  };
 
   const unreadCount = items.filter(n => !n.read).length;
 
@@ -109,7 +131,7 @@ export default function Notifications() {
       </div>
 
       {/* ── Filter pills ── */}
-      <div style={{ display: "flex", gap: 5, marginBottom: 12, flexWrap: "wrap", overflowX: "auto", paddingBottom: 4, "@media (maxWidth: 480px)": { fontSize: 10 } }}>
+      <div style={{ display: "flex", gap: 5, marginBottom: 12, flexWrap: "wrap", overflowX: "auto", paddingBottom: 4 }}>
         {FILTERS.map(f => (
           <button
             key={f}
