@@ -263,7 +263,8 @@ export default function Reports() {
         {/* Revenue Trend */}
         <div style={{ ...card, minWidth: 0 }}>
           <p style={sTitle}>Revenue Trend</p>
-          <ResponsiveContainer width="99%" height={160}>
+          <div style={{ position: "relative", width: "100%", height: 160 }}>
+            <ResponsiveContainer width="100%" height="100%">
             <LineChart data={monthlyRevenue} margin={{ left: -10, right: 5, top: 5, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
               <XAxis dataKey="month" tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
@@ -272,12 +273,14 @@ export default function Reports() {
               <Line type="monotone" dataKey="revenue" stroke="#1B4332" strokeWidth={2} dot={{ fill: "#1B4332", r: 3 }} activeDot={{ r: 5 }} />
             </LineChart>
           </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Peak Days */}
         <div style={{ ...card, minWidth: 0 }}>
           <p style={sTitle}>Bookings by Day</p>
-          <ResponsiveContainer width="99%" height={160}>
+          <div style={{ position: "relative", width: "100%", height: 160 }}>
+            <ResponsiveContainer width="100%" height="100%">
             <BarChart data={peakData} barCategoryGap="35%" margin={{ left: -10, right: 5, top: 5, bottom: 5 }}>
               <XAxis dataKey="day" tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
@@ -289,6 +292,7 @@ export default function Reports() {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+          </div>
           <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
               <div style={{ width: 8, height: 8, borderRadius: 2, background: "#D4A017" }} />

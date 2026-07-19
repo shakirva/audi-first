@@ -213,7 +213,8 @@ export default function Dashboard() {
         {can("canViewRevenue") && (
         <div style={{ ...S.card, minWidth: 0 }}>
           <p style={S.sectionTitle}>Monthly Revenue (₹)</p>
-          <ResponsiveContainer width="99%" height={280} className="hm-mobile-chart">
+          <div style={{ position: "relative", width: "100%", height: 280 }}>
+            <ResponsiveContainer width="100%" height="100%" className="hm-mobile-chart">
             <BarChart data={monthlyRevenue} barCategoryGap="30%">
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${v / 1000}k`} />
@@ -225,13 +226,15 @@ export default function Dashboard() {
               <Bar dataKey="revenue" fill="#1B4332" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
+          </div>
         </div>
         )}
 
         {/* Pie Chart */}
         <div style={{ ...S.card, minWidth: 0 }}>
           <p style={S.sectionTitle}>Event Types</p>
-          <ResponsiveContainer width="99%" height={220}>
+          <div style={{ position: "relative", width: "100%", height: 220 }}>
+            <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie data={eventTypes} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} innerRadius={42} paddingAngle={3}>
                 {eventTypes.map((_, i) => (
@@ -241,6 +244,7 @@ export default function Dashboard() {
               <Tooltip contentStyle={{ borderRadius: 8, border: "none", fontSize: 12 }} />
             </PieChart>
           </ResponsiveContainer>
+          </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 4 }}>
             {eventTypes.map((e, i) => (
               <div key={e.name} style={{ display: "flex", alignItems: "center", gap: 8 }}>
