@@ -2,6 +2,14 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+html, body, #root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+
 html { font-size: 16px; -webkit-font-smoothing: antialiased; }
 
 body {
@@ -90,8 +98,8 @@ button, input, select, textarea {
 }
 
 /* Desktop table vs Mobile card view */
-.hm-desktop-only { display: none; }
-.hm-mobile-only  { display: block; }
+.hm-desktop-only { display: none !important; }
+.hm-mobile-only  { display: block !important; }
 @media (min-width: 768px) {
   .hm-desktop-only { display: block !important; }
   .hm-mobile-only  { display: none !important; }
@@ -176,12 +184,21 @@ button, input, select, textarea {
 /* Main content padding — more on desktop */
 .hm-main-content {
   padding: 16px;
-  padding-bottom: 80px;
+  padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  padding-left: calc(16px + env(safe-area-inset-left));
+  padding-right: calc(16px + env(safe-area-inset-right));
+}
+.hm-header {
+  padding: 12px 16px;
+  padding-top: calc(12px + env(safe-area-inset-top));
 }
 @media (min-width: 1024px) {
   .hm-main-content {
-    padding: 28px 32px;
-    padding-bottom: 32px;
+    padding: 24px;
+    padding-bottom: 24px;
+  }
+  .hm-header {
+    padding: 12px 24px;
   }
 }
 

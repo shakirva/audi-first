@@ -62,7 +62,7 @@ export default function Sidebar({ open, onClose }) {
       )}
 
       <aside style={{
-        position: "fixed", top: 0, left: 0, width: 260, height: "100vh", zIndex: 50,
+        position: "fixed", top: 0, left: 0, width: 260, height: "100dvh", zIndex: 50,
         display: "flex", flexDirection: "column",
         background: "linear-gradient(180deg, #0D2418 0%, #0a1e12 60%, #071510 100%)",
         boxShadow: "4px 0 30px rgba(0,0,0,0.4)",

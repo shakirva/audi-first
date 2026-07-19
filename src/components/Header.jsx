@@ -34,14 +34,13 @@ export default function Header({ title, onMenuClick }) {
           </div>
         </div>
       )}
-      <header style={{
+      <header className="hm-header" style={{
       background: "#fff",
       borderBottom: "1px solid #e5e7eb",
       boxShadow: "0 1px 8px rgba(0,0,0,0.06)",
       display: "flex",
       alignItems: "center",
       gap: 12,
-      padding: "12px 24px",
       position: "sticky",
       top: 0,
       zIndex: 30,

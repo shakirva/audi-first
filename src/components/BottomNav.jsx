@@ -20,6 +20,7 @@ export default function BottomNav() {
       background: "#fff", borderTop: "1px solid #e5e7eb",
       display: "flex",
       fontFamily: "'DM Sans', sans-serif",
+      paddingBottom: "env(safe-area-inset-bottom)",
     }} className="hallmaster-bottomnav">
       {items.map((item) => {
         const NavIcon = item.icon;
