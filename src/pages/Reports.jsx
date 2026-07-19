@@ -261,9 +261,9 @@ export default function Reports() {
       <div className="hm-2col-grid" style={{ marginBottom: 12 }}>
 
         {/* Revenue Trend */}
-        <div style={card}>
+        <div style={{ ...card, minWidth: 0 }}>
           <p style={sTitle}>Revenue Trend</p>
-          <ResponsiveContainer width="100%" height={160} style={{ minWidth: 0 }}>
+          <ResponsiveContainer width="100%" height={160}>
             <LineChart data={monthlyRevenue} margin={{ left: -10, right: 5, top: 5, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
               <XAxis dataKey="month" tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
@@ -275,9 +275,9 @@ export default function Reports() {
         </div>
 
         {/* Peak Days */}
-        <div style={card}>
+        <div style={{ ...card, minWidth: 0 }}>
           <p style={sTitle}>Bookings by Day</p>
-          <ResponsiveContainer width="100%" height={160} style={{ minWidth: 0 }}>
+          <ResponsiveContainer width="100%" height={160}>
             <BarChart data={peakData} barCategoryGap="35%" margin={{ left: -10, right: 5, top: 5, bottom: 5 }}>
               <XAxis dataKey="day" tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
