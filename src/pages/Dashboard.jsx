@@ -213,7 +213,7 @@ export default function Dashboard() {
         {can("canViewRevenue") && (
         <div style={{ ...S.card, minWidth: 0 }}>
           <p style={S.sectionTitle}>Monthly Revenue (₹)</p>
-          <ResponsiveContainer width="100%" height={280} className="hm-mobile-chart">
+          <ResponsiveContainer width="99%" height={280} className="hm-mobile-chart">
             <BarChart data={monthlyRevenue} barCategoryGap="30%">
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${v / 1000}k`} />
@@ -231,7 +231,7 @@ export default function Dashboard() {
         {/* Pie Chart */}
         <div style={{ ...S.card, minWidth: 0 }}>
           <p style={S.sectionTitle}>Event Types</p>
-          <ResponsiveContainer width="100%" height={220}>
+          <ResponsiveContainer width="99%" height={220}>
             <PieChart>
               <Pie data={eventTypes} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} innerRadius={42} paddingAngle={3}>
                 {eventTypes.map((_, i) => (
