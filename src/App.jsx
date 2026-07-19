@@ -46,11 +46,11 @@ function AdminLayout() {
   const title = pageTitles[location.pathname] || "Venueza";
 
   return (
-    <div style={{ display: "flex", minHeight: "100dvh", background: "#F0F4EF", fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ display: "flex", minHeight: "100%", width: "100%", maxWidth: "100%", background: "#F0F4EF", fontFamily: "'DM Sans', sans-serif" }}>
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
         <Header title={title} onMenuClick={() => setSidebarOpen(true)} />
-        <main className="hm-main-content" style={{ flex: 1, overflowY: "auto" }}>
+        <main className="hm-main-content" style={{ flex: 1 }}>
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/bookings" element={<Bookings />} />

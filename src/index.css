@@ -3,11 +3,13 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body, #root {
+  height: 100%;
   width: 100%;
-  max-width: 100%;
   overflow-x: hidden;
+  overflow-y: auto;
   margin: 0;
   padding: 0;
+  -webkit-overflow-scrolling: touch;
 }
 
 html { font-size: 16px; -webkit-font-smoothing: antialiased; }
@@ -17,11 +19,6 @@ body {
   background: #F0F4EF;
   color: #111827;
   line-height: 1.5;
-  /* PWA Safe Areas for iOS/Notches */
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
   /* Prevent pull-to-refresh on mobile */
   overscroll-behavior-y: none;
 }
