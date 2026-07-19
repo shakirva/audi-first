@@ -102,27 +102,29 @@ export default function Bookings() {
       </div>
 
       {/* ── FILTER TABS — Desktop buttons ── */}
-      <div className="hm-desktop-only" style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
-        {TABS.map(t => (
-          <button key={t} onClick={() => setTab(t)} style={{
-            display: "flex", alignItems: "center", gap: 5,
-            padding: "5px 12px", borderRadius: 20, border: "none", cursor: "pointer",
-            fontSize: 11, fontWeight: 600, transition: "all 0.15s",
-            background: tab === t ? "#1B4332" : "#fff",
-            color:      tab === t ? "#fff"    : "#6b7280",
-            boxShadow:  tab === t ? "0 2px 10px rgba(27,67,50,0.25)" : "0 1px 4px rgba(0,0,0,0.06)",
-            whiteSpace: "nowrap", flexShrink: 0,
-          }}>
-            {t}
-            <span style={{
-              fontSize: 9, fontWeight: 700, minWidth: 16, height: 16,
-              borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
-              background: tab === t ? "rgba(255,255,255,0.25)" : "#f3f4f6",
-              color:      tab === t ? "#fff" : "#374151",
-              padding: "0 4px",
-            }}>{tabCount(t)}</span>
-          </button>
-        ))}
+      <div className="hm-desktop-only">
+        <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
+          {TABS.map(t => (
+            <button key={t} onClick={() => setTab(t)} style={{
+              display: "flex", alignItems: "center", gap: 5,
+              padding: "5px 12px", borderRadius: 20, border: "none", cursor: "pointer",
+              fontSize: 11, fontWeight: 600, transition: "all 0.15s",
+              background: tab === t ? "#1B4332" : "#fff",
+              color:      tab === t ? "#fff"    : "#6b7280",
+              boxShadow:  tab === t ? "0 2px 10px rgba(27,67,50,0.25)" : "0 1px 4px rgba(0,0,0,0.06)",
+              whiteSpace: "nowrap", flexShrink: 0,
+            }}>
+              {t}
+              <span style={{
+                fontSize: 9, fontWeight: 700, minWidth: 16, height: 16,
+                borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
+                background: tab === t ? "rgba(255,255,255,0.25)" : "#f3f4f6",
+                color:      tab === t ? "#fff" : "#374151",
+                padding: "0 4px",
+              }}>{tabCount(t)}</span>
+            </button>
+          ))}
+        </div>
       </div>
       {/* ── FILTER TABS — Mobile dropdown ── */}
       <div className="hm-mobile-only" style={{ marginBottom: 14 }}>

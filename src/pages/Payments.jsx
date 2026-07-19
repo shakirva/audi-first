@@ -318,15 +318,33 @@ export default function Payments() {
             <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 700, color: "#111827", margin: 0 }}>
               Payment History
             </h3>
-            <div style={{ display: "flex", gap: 6, overflowX: "auto" }}>
-              {EVENT_TYPES.map(t => (
-                <button key={t} onClick={() => setHistoryFilter(t)} style={{
-                  padding: "4px 10px", borderRadius: 20, border: `1.5px solid ${historyFilter === t ? "#1B4332" : "#e5e7eb"}`,
-                  background: historyFilter === t ? "#1B4332" : "#fff",
-                  color: historyFilter === t ? "#fff" : "#6b7280",
-                  fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap",
-                }}>{t}</button>
-              ))}
+            <div className="hm-desktop-only">
+              <div style={{ display: "flex", gap: 6, overflowX: "auto" }}>
+                {EVENT_TYPES.map(t => (
+                  <button key={t} onClick={() => setHistoryFilter(t)} style={{
+                    padding: "4px 10px", borderRadius: 20, border: `1.5px solid ${historyFilter === t ? "#1B4332" : "#e5e7eb"}`,
+                    background: historyFilter === t ? "#1B4332" : "#fff",
+                    color: historyFilter === t ? "#fff" : "#6b7280",
+                    fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap",
+                  }}>{t}</button>
+                ))}
+              </div>
+            </div>
+            <div className="hm-mobile-only">
+              <select
+                value={historyFilter}
+                onChange={(e) => setHistoryFilter(e.target.value)}
+                style={{
+                  padding: "4px 24px 4px 10px", borderRadius: 10, border: "1.5px solid #1B4332",
+                  background: "#1B4332", color: "#fff", fontSize: 10, fontWeight: 700,
+                  fontFamily: "'DM Sans', sans-serif", cursor: "pointer", outline: "none",
+                  appearance: "none", WebkitAppearance: "none",
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+                  backgroundRepeat: "no-repeat", backgroundPosition: "right 8px center",
+                }}
+              >
+                {EVENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
             </div>
           </div>
 

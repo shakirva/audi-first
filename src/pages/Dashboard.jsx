@@ -158,38 +158,42 @@ export default function Dashboard() {
     <div style={{ fontFamily: "'DM Sans', sans-serif", maxWidth: 1400, touchAction: "manipulation" }}>
 
       {/* ── DATE FILTER — Dropdown on mobile, buttons on desktop ── */}
-      <div className="hm-desktop-only" style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16, gap: 4 }}>
-        {DATE_FILTERS.map((f) => (
-          <button
-            key={f}
-            onClick={() => setDateFilter(f)}
-            style={{
-              padding: "6px 16px", borderRadius: 20, border: "1.5px solid",
-              borderColor: dateFilter === f ? "#1B4332" : "#e5e7eb",
-              background: dateFilter === f ? "#1B4332" : "#fff",
-              color: dateFilter === f ? "#fff" : "#6b7280",
-              fontSize: 12, fontWeight: 600, cursor: "pointer",
-              fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s",
-              whiteSpace: "nowrap", flexShrink: 0,
-            }}
-          >{f}</button>
-        ))}
+      <div className="hm-desktop-only">
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16, gap: 4 }}>
+          {DATE_FILTERS.map((f) => (
+            <button
+              key={f}
+              onClick={() => setDateFilter(f)}
+              style={{
+                padding: "6px 16px", borderRadius: 20, border: "1.5px solid",
+                borderColor: dateFilter === f ? "#1B4332" : "#e5e7eb",
+                background: dateFilter === f ? "#1B4332" : "#fff",
+                color: dateFilter === f ? "#fff" : "#6b7280",
+                fontSize: 12, fontWeight: 600, cursor: "pointer",
+                fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s",
+                whiteSpace: "nowrap", flexShrink: 0,
+              }}
+            >{f}</button>
+          ))}
+        </div>
       </div>
-      <div className="hm-mobile-only" style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
-        <select
-          value={dateFilter}
-          onChange={(e) => setDateFilter(e.target.value)}
-          style={{
-            padding: "7px 32px 7px 14px", borderRadius: 10, border: "1.5px solid #1B4332",
-            background: "#1B4332", color: "#fff", fontSize: 12, fontWeight: 600,
-            fontFamily: "'DM Sans', sans-serif", cursor: "pointer", outline: "none",
-            appearance: "none", WebkitAppearance: "none",
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
-            backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center",
-          }}
-        >
-          {DATE_FILTERS.map((f) => <option key={f} value={f}>{f}</option>)}
-        </select>
+      <div className="hm-mobile-only">
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
+          <select
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            style={{
+              padding: "7px 32px 7px 14px", borderRadius: 10, border: "1.5px solid #1B4332",
+              background: "#1B4332", color: "#fff", fontSize: 12, fontWeight: 600,
+              fontFamily: "'DM Sans', sans-serif", cursor: "pointer", outline: "none",
+              appearance: "none", WebkitAppearance: "none",
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+              backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center",
+            }}
+          >
+            {DATE_FILTERS.map((f) => <option key={f} value={f}>{f}</option>)}
+          </select>
+        </div>
       </div>
 
       {/* ── STAT CARDS ── */}
