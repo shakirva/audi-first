@@ -29,6 +29,7 @@ export default function BookingDetailModal({ booking: initialBooking, onClose, o
   const { addToast } = useToast();
   const { updateStatus } = useBookings();
   const [booking, setBooking] = useState(initialBooking);
+  const [confirmAction, setConfirmAction] = useState(null);
   if (!booking) return null;
 
   const advance = Number(booking.advance ?? booking.advancePaid ?? 0);
@@ -42,23 +43,35 @@ export default function BookingDetailModal({ booking: initialBooking, onClose, o
   const flow = STATUS_FLOW[booking.status];
 
   const handleStatusChange = (newStatus) => {
-    updateStatus(booking.id, newStatus);
-    setBooking(prev => ({ ...prev, status: newStatus }));
-    const msgs = { Confirmed: "Booking confirmed! ✅", Completed: "Booking completed! 🏁" };
-    addToast(msgs[newStatus] || "Status updated", "success");
+    setConfirmAction({ type: "status", status: newStatus });
   };
 
   const handleCancel = () => {
-    updateStatus(booking.id, "Cancelled");
-    setBooking(prev => ({ ...prev, status: "Cancelled" }));
-    addToast("Booking cancelled", "error");
+    setConfirmAction({ type: "cancel" });
+  };
+
+  const executeAction = () => {
+    if (!confirmAction) return;
+    if (confirmAction.type === "status") {
+      updateStatus(booking.id, confirmAction.status);
+      setBooking(prev => ({ ...prev, status: confirmAction.status }));
+      const msgs = { Confirmed: "Booking confirmed! ✅", Completed: "Booking completed! 🏁" };
+      addToast(msgs[confirmAction.status] || "Status updated", "success");
+    } else if (confirmAction.type === "cancel") {
+      updateStatus(booking.id, "Cancelled");
+      setBooking(prev => ({ ...prev, status: "Cancelled" }));
+      addToast("Booking cancelled", "error");
+    }
+    setConfirmAction(null);
   };
 
   const handleWhatsApp = () => {
     const msg = encodeURIComponent(
       `Dear ${booking.customerName},\n\nYour booking at our auditorium is confirmed! 🎉\n\n📅 Date: ${formattedDate}\n🏛️ Hall: ${booking.hall}\n⏰ Session: ${booking.session}\n👥 Guests: ${booking.guests}\n💰 Total: ₹${booking.totalAmount.toLocaleString()}\n✅ Advance: ₹${advance.toLocaleString()}\n⚠️ Balance Due: ₹${balance.toLocaleString()}\n\nThank you for choosing us! 🙏`
     );
-    window.open(`https://wa.me/91${booking.phone}?text=${msg}`, "_blank");
+    const phone = booking.phone.replace(/[^0-9]/g, "");
+    const fullPhone = phone.startsWith("91") ? phone : `91${phone}`;
+    window.open(`https://wa.me/${fullPhone}?text=${msg}`, "_blank");
   };
 
   const row = (label, value) => (
@@ -192,6 +205,29 @@ export default function BookingDetailModal({ booking: initialBooking, onClose, o
             </button>
           </div>
         </div>
+
+        {/* ── CONFIRMATION MODAL ── */}
+        {confirmAction && (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={() => setConfirmAction(null)}>
+            <div style={{ background: "#fff", borderRadius: 16, padding: 24, maxWidth: 360, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.25)" }} onClick={e => e.stopPropagation()}>
+              <p style={{ fontSize: 32, textAlign: "center", marginBottom: 12 }}>
+                {confirmAction.type === "cancel" ? "⚠️" : confirmAction.status === "Completed" ? "🏁" : "✅"}
+              </p>
+              <p style={{ fontWeight: 700, fontSize: 15, color: "#111827", textAlign: "center", marginBottom: 6 }}>
+                {confirmAction.type === "cancel" ? "Cancel this booking?" : `${confirmAction.status === "Completed" ? "Mark as completed" : "Confirm this booking"}?`}
+              </p>
+              <p style={{ fontSize: 12, color: "#9ca3af", textAlign: "center", marginBottom: 20 }}>
+                {confirmAction.type === "cancel" ? "The booking will be marked as cancelled." : "This will update the booking status."}
+              </p>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => setConfirmAction(null)} style={{ flex: 1, padding: "10px 0", borderRadius: 9, border: "1px solid #e5e7eb", background: "#f9fafb", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#6b7280" }}>No, Go Back</button>
+                <button onClick={executeAction} style={{ flex: 1, padding: "10px 0", borderRadius: 9, border: "none", background: confirmAction.type === "cancel" ? "#ef4444" : "#1B4332", cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#fff" }}>
+                  {confirmAction.type === "cancel" ? "Yes, Cancel" : "Yes, Proceed"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

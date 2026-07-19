@@ -7,7 +7,7 @@ import { useToast } from "../components/Toast";
 import { useBookings } from "../context/BookingsContext";
 import { useRole } from "../context/RoleContext";
 
-const TABS = ["All", "Confirmed", "Pending Payment", "Enquiry", "Completed"];
+const TABS = ["All", "Pending Payment", "Enquiry", "Completed"];
 
 const STATUS_STYLE = {
   Confirmed:       { bg: "#dcfce7", color: "#15803d", dot: "#22c55e" },
@@ -29,6 +29,7 @@ export default function Bookings() {
   const [editTarget, setEditTarget] = useState(null);
   const [detail, setDetail]       = useState(null);
   const [invoice, setInvoice]     = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const { addToast }              = useToast();
   const { bookings, deleteBooking } = useBookings();
   const { can }                   = useRole();
@@ -41,8 +42,15 @@ export default function Bookings() {
   });
 
   const handleDelete = (id) => {
-    deleteBooking(id);
-    addToast("Booking deleted", "success");
+    setConfirmDelete(id);
+  };
+
+  const confirmDeleteBooking = () => {
+    if (confirmDelete) {
+      deleteBooking(confirmDelete);
+      addToast("Booking deleted", "success");
+      setConfirmDelete(null);
+    }
   };
 
   const tabCount = (t) => t === "All" ? bookings.length : bookings.filter(b => b.status === t).length;
@@ -93,8 +101,8 @@ export default function Bookings() {
         )}
       </div>
 
-      {/* ── FILTER TABS ── */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap", overflowX: "auto", paddingBottom: 4 }}>
+      {/* ── FILTER TABS — Desktop buttons ── */}
+      <div className="hm-desktop-only" style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
         {TABS.map(t => (
           <button key={t} onClick={() => setTab(t)} style={{
             display: "flex", alignItems: "center", gap: 5,
@@ -115,6 +123,24 @@ export default function Bookings() {
             }}>{tabCount(t)}</span>
           </button>
         ))}
+      </div>
+      {/* ── FILTER TABS — Mobile dropdown ── */}
+      <div className="hm-mobile-only" style={{ marginBottom: 14 }}>
+        <select
+          value={tab}
+          onChange={(e) => setTab(e.target.value)}
+          style={{
+            width: "100%", padding: "9px 36px 9px 14px", borderRadius: 10,
+            border: "1.5px solid #1B4332", background: "#fff", color: "#1B4332",
+            fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif",
+            cursor: "pointer", outline: "none",
+            appearance: "none", WebkitAppearance: "none",
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%231B4332' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+            backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center",
+          }}
+        >
+          {TABS.map(t => <option key={t} value={t}>{t} ({tabCount(t)})</option>)}
+        </select>
       </div>
 
       {/* ── TABLE / CARD VIEW ── */}
@@ -287,6 +313,21 @@ export default function Bookings() {
       {showAdd && <BookingModal onClose={() => { setShowAdd(false); setEditTarget(null); }} editData={editTarget} />}
       {detail  && <BookingDetailModal booking={detail} onClose={() => setDetail(null)} onInvoice={() => { setInvoice(detail); setDetail(null); }} onEdit={(b) => { setEditTarget(b); setShowAdd(true); }} />}
       {invoice && <InvoiceModal booking={invoice} onClose={() => setInvoice(null)} />}
+
+      {/* ── DELETE CONFIRMATION MODAL ── */}
+      {confirmDelete && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, backdropFilter: "blur(4px)" }} onClick={() => setConfirmDelete(null)}>
+          <div style={{ background: "#fff", borderRadius: 16, padding: 24, maxWidth: 360, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.25)" }} onClick={e => e.stopPropagation()}>
+            <p style={{ fontSize: 32, textAlign: "center", marginBottom: 12 }}>🗑️</p>
+            <p style={{ fontWeight: 700, fontSize: 15, color: "#111827", textAlign: "center", marginBottom: 6 }}>Delete this booking?</p>
+            <p style={{ fontSize: 12, color: "#9ca3af", textAlign: "center", marginBottom: 20 }}>This action cannot be undone.</p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setConfirmDelete(null)} style={{ flex: 1, padding: "10px 0", borderRadius: 9, border: "1px solid #e5e7eb", background: "#f9fafb", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#6b7280" }}>Cancel</button>
+              <button onClick={confirmDeleteBooking} style={{ flex: 1, padding: "10px 0", borderRadius: 9, border: "none", background: "#ef4444", cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#fff" }}>Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

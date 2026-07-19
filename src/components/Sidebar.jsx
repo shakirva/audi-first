@@ -216,13 +216,6 @@ export default function Sidebar({ open, onClose }) {
             </div>
           </div>
 
-          {/* Role badge */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, color: rc.dot, background: `${rc.dot}22`, border: `1px solid ${rc.dot}44`, padding: "3px 10px", borderRadius: 12, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-              {role === "Tester" ? "MANAGER" : role}
-            </span>
-          </div>
-
           {/* Settings & Logout */}
           <div style={{ display: "flex", gap: 8 }}>
             {can("canViewSettings") && (

@@ -7,7 +7,7 @@ import { Download } from "lucide-react";
 import { useToast } from "../components/Toast";
 import { useBookings } from "../context/BookingsContext";
 
-const card = { background: "#fff", borderRadius: 12, boxShadow: "0 1px 6px rgba(0,0,0,0.05)", padding: 14 };
+const card = { background: "#fff", borderRadius: 12, boxShadow: "0 1px 6px rgba(0,0,0,0.05)", padding: 14, overflow: "hidden" };
 const sTitle = { fontFamily: "'Playfair Display', serif", fontSize: 13, fontWeight: 700, color: "#111827", marginBottom: 12, margin: 0 };
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -221,7 +221,7 @@ export default function Reports() {
       <div className="hm-stat-grid">
         {[
           { label: "Total Bookings",  value: bookings.length,     color: "#1B4332", bg: "#f0faf4", icon: "📅" },
-          { label: "Confirmed",       value: confirmed - 1,        color: "#15803d", bg: "#dcfce7", icon: "✅" },
+          { label: "Confirmed",       value: bookings.filter(b => b.status === "Confirmed").length,        color: "#15803d", bg: "#dcfce7", icon: "✅" },
           { label: "Total Revenue",   value: `₹${(totalRevenue/100000).toFixed(1)}L`, color: "#D4A017", bg: "#fffbeb", icon: "💰" },
           { label: "Avg. Booking",    value: `₹${Math.round(totalRevenue/confirmed/1000).toFixed(0)}k`, color: "#2563eb", bg: "#eff6ff", icon: "📊" },
         ].map(s => (
@@ -241,8 +241,8 @@ export default function Reports() {
         {/* Revenue Trend */}
         <div style={card}>
           <p style={sTitle}>Revenue Trend</p>
-          <ResponsiveContainer width="100%" height={160}>
-            <LineChart data={monthlyRevenue}>
+          <ResponsiveContainer width="100%" height={160} style={{ minWidth: 0 }}>
+            <LineChart data={monthlyRevenue} margin={{ left: -10, right: 5, top: 5, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
               <XAxis dataKey="month" tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} tickFormatter={v => `₹${v/100000}L`} />
@@ -255,8 +255,8 @@ export default function Reports() {
         {/* Peak Days */}
         <div style={card}>
           <p style={sTitle}>Bookings by Day</p>
-          <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={peakData} barCategoryGap="35%">
+          <ResponsiveContainer width="100%" height={160} style={{ minWidth: 0 }}>
+            <BarChart data={peakData} barCategoryGap="35%" margin={{ left: -10, right: 5, top: 5, bottom: 5 }}>
               <XAxis dataKey="day" tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ borderRadius: 6, border: "none", fontSize: 11 }} />

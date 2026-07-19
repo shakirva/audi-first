@@ -388,3 +388,27 @@ button, input, select, textarea {
   .hm-page-title { font-size: 20px; }
 }
 
+/* Prevent touch shaking/jitter on mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, a, select, input {
+  touch-action: manipulation;
+}
+
+/* Fix recharts overflow on mobile */
+.recharts-wrapper {
+  max-width: 100% !important;
+}
+
+@media (max-width: 767px) {
+  .recharts-responsive-container {
+    min-height: 150px !important;
+  }
+}
+
+/* Sidebar bottom safe area */
+.hallmaster-sidebar {
+  padding-bottom: env(safe-area-inset-bottom);
+}

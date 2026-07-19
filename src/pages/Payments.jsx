@@ -68,7 +68,9 @@ export default function Payments() {
     const msg = encodeURIComponent(
       `Dear ${b.customerName},\n\nThis is a gentle reminder that a balance payment of \u20b9${balance.toLocaleString()} is pending for your upcoming ${b.eventType} on ${eventDate} at ${b.hall}.\n\n${reminderLine}\n\nThank you! 🙏\n— Sreelakshmi Convention Centre`
     );
-    window.open(`https://wa.me/91${b.phone}?text=${msg}`, "_blank");
+    const phone = b.phone.replace(/[^0-9]/g, "");
+    const fullPhone = phone.startsWith("91") ? phone : `91${phone}`;
+    window.open(`https://wa.me/${fullPhone}?text=${msg}`, "_blank");
     setSentReminders(prev => ({ ...prev, [b.id]: new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) }));
     addToast(`${isAuto ? "Auto-reminder" : "Reminder"} sent to ${b.customerName} 📱`, "success");
   };

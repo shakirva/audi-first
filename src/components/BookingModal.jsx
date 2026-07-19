@@ -125,7 +125,7 @@ export default function BookingModal({ onClose, prefillDate = "", editData = nul
   };
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, backdropFilter: "blur(4px)" }}>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 12, backdropFilter: "blur(4px)" }}>
       <div style={{ background: "#fff", borderRadius: 20, boxShadow: "0 25px 80px rgba(0,0,0,0.2)", width: "100%", maxWidth: 640, maxHeight: "92vh", overflowY: "auto", fontFamily: "'DM Sans', sans-serif" }}>
 
         {/* ── HEADER ── */}
@@ -141,14 +141,14 @@ export default function BookingModal({ onClose, prefillDate = "", editData = nul
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ padding: 24 }}>
+        <form onSubmit={handleSubmit} style={{ padding: "20px 16px" }} className="hm-booking-form">
 
           {/* ── SECTION: Customer ── */}
           <div style={{ marginBottom: 20 }}>
             <p style={{ fontSize: 11, fontWeight: 800, color: "#1B4332", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
               <User size={13} /> Customer Details
             </p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <div className="hm-form-2col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               <div>
                 <label style={labelSt}><User size={11} /> Customer Name *</label>
                 <input name="customerName" value={form.customerName} onChange={handleChange}
@@ -158,10 +158,13 @@ export default function BookingModal({ onClose, prefillDate = "", editData = nul
               </div>
               <div>
                 <label style={labelSt}><Phone size={11} /> Phone Number *</label>
-                <input name="phone" value={form.phone} onChange={handleChange} type="tel"
-                  placeholder="e.g. 9447012345" style={iStyle} required minLength={10} pattern="[0-9]{10,15}"
-                  onFocus={e => e.target.style.borderColor = "#1B4332"}
-                  onBlur={e => e.target.style.borderColor = "#e5e7eb"} />
+                <div style={{ position: "relative" }}>
+                  <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "#6b7280", fontWeight: 600, pointerEvents: "none" }}>+91</span>
+                  <input name="phone" value={form.phone} onChange={handleChange} type="tel"
+                    placeholder="9447012345" style={{ ...iStyle, paddingLeft: 42 }} required minLength={10} pattern="[0-9]{10,15}"
+                    onFocus={e => e.target.style.borderColor = "#1B4332"}
+                    onBlur={e => e.target.style.borderColor = "#e5e7eb"} />
+                </div>
               </div>
             </div>
           </div>
@@ -171,7 +174,7 @@ export default function BookingModal({ onClose, prefillDate = "", editData = nul
             <p style={{ fontSize: 11, fontWeight: 800, color: "#1B4332", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
               <CalendarDays size={13} /> Event Details
             </p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <div className="hm-form-2col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               <div>
                 <label style={labelSt}>Event Type</label>
                 <select name="eventType" value={form.eventType} onChange={handleChange}
@@ -197,7 +200,7 @@ export default function BookingModal({ onClose, prefillDate = "", editData = nul
               <Building2 size={13} /> Hall & Session
             </p>
             {/* Hall cards */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 14 }}>
+            <div className="hm-form-3col" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 14 }}>
               {hallOptions.map(h => (
                 <button type="button" key={h.name} onClick={() => handleChange({ target: { name: "hall", value: h.name } })}
                   style={{
@@ -240,7 +243,7 @@ export default function BookingModal({ onClose, prefillDate = "", editData = nul
             <p style={{ fontSize: 11, fontWeight: 800, color: "#1B4332", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
               <IndianRupee size={13} /> Guests & Payment
             </p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
+            <div className="hm-form-3col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
               <div>
                 <label style={labelSt}><Users size={11} /> Expected Guests *</label>
                 <input type="number" name="guests" value={form.guests} onChange={handleChange}
@@ -327,6 +330,14 @@ export default function BookingModal({ onClose, prefillDate = "", editData = nul
               ✅ {editData ? "Update Booking" : "Save Booking"}
             </button>
           </div>
+
+          <style>{`
+            @media (max-width: 600px) {
+              .hm-form-2col { grid-template-columns: 1fr !important; }
+              .hm-form-3col { grid-template-columns: 1fr 1fr !important; }
+              .hm-booking-form { padding: 16px 14px !important; }
+            }
+          `}</style>
         </form>
       </div>
     </div>
