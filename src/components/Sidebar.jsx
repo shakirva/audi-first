@@ -62,7 +62,7 @@ export default function Sidebar({ open, onClose }) {
       )}
 
       <aside style={{
-        position: "fixed", top: 0, left: 0, width: 260, height: "100dvh", zIndex: 50,
+        position: "fixed", top: 0, left: 0, width: 260, height: "100%", zIndex: 50,
         display: "flex", flexDirection: "column",
         background: "linear-gradient(180deg, #0D2418 0%, #0a1e12 60%, #071510 100%)",
         boxShadow: "4px 0 30px rgba(0,0,0,0.4)",
@@ -72,7 +72,7 @@ export default function Sidebar({ open, onClose }) {
       }} className="hallmaster-sidebar">
 
         {/* ── LOGO ── */}
-        <div style={{ padding: "22px 20px 18px", borderBottom: "1px solid rgba(212,160,23,0.15)", flexShrink: 0 }}>
+        <div style={{ paddingTop: "calc(22px + env(safe-area-inset-top))", paddingRight: 20, paddingBottom: 18, paddingLeft: 20, borderBottom: "1px solid rgba(212,160,23,0.15)", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <Logo size={44} />
             <div style={{ flex: 1 }}>
@@ -192,7 +192,7 @@ export default function Sidebar({ open, onClose }) {
         <div style={{ height: 1, background: "rgba(212,160,23,0.1)", margin: "0 16px", flexShrink: 0 }} />
 
         {/* ── USER PROFILE + ACTIONS ── */}
-        <div style={{ padding: "12px 14px 16px", flexShrink: 0 }}>
+        <div style={{ padding: "12px 14px calc(16px + env(safe-area-inset-bottom))", flexShrink: 0, marginTop: "auto" }}>
           {/* Profile row */}
           <div style={{
             background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)",
