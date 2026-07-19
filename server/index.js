@@ -16,6 +16,7 @@ const settingsRoutes = require("./routes/settings");
 const adminRoutes = require("./routes/admin");
 
 const app = express();
+app.set("trust proxy", 1); // Fixes Render rate-limit warning
 
 // ── Security ──
 app.use(helmet());
