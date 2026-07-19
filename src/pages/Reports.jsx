@@ -198,23 +198,45 @@ export default function Reports() {
     <div style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* ── DATE RANGE FILTER ── */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, flexWrap: "wrap", background: "#fff", borderRadius: 10, padding: "10px 12px", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
-        <span style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>📅</span>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1, minWidth: 200, overflowX: "auto", flexWrap: "wrap", paddingBottom: 4 }}>
-          <label style={{ fontSize: 11, color: "#6b7280", fontWeight: 500, whiteSpace: "nowrap" }}>From</label>
-          <input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)}
-            style={{ border: "1px solid #e5e7eb", borderRadius: 6, padding: "4px 8px", fontSize: 11, fontFamily: "'DM Sans', sans-serif", color: "#374151", outline: "none" }} />
-          <label style={{ fontSize: 11, color: "#6b7280", fontWeight: 500, whiteSpace: "nowrap" }}>To</label>
-          <input type="date" value={toDate} onChange={e => setToDate(e.target.value)}
-            style={{ border: "1px solid #e5e7eb", borderRadius: 6, padding: "4px 8px", fontSize: 11, fontFamily: "'DM Sans', sans-serif", color: "#374151", outline: "none" }} />
+      <div style={{ background: "#fff", borderRadius: 12, padding: "16px", boxShadow: "0 1px 6px rgba(0,0,0,0.05)", marginBottom: 16 }}>
+        <p style={{ fontSize: 13, fontWeight: 700, color: "#111827", marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 14 }}>📅</span> Date Range
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 16, marginBottom: 16 }}>
+          <div>
+            <label style={{ display: "block", fontSize: 12, color: "#6b7280", fontWeight: 600, marginBottom: 8 }}>From</label>
+            <input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)}
+              style={{ width: "100%", border: "1px solid #e5e7eb", borderRadius: 8, padding: "8px 16px", fontSize: 13, fontFamily: "'DM Sans', sans-serif", color: "#374151", outline: "none" }} />
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: 12, color: "#6b7280", fontWeight: 600, marginBottom: 8 }}>To</label>
+            <input type="date" value={toDate} onChange={e => setToDate(e.target.value)}
+              style={{ width: "100%", border: "1px solid #e5e7eb", borderRadius: 8, padding: "8px 16px", fontSize: 13, fontFamily: "'DM Sans', sans-serif", color: "#374151", outline: "none" }} />
+          </div>
+        </div>
+        
+        <div style={{ display: "flex", gap: 16, marginBottom: 16 }}>
           <button onClick={() => { setFromDate(defaultFrom); setToDate(defaultTo); }}
-            style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #e5e7eb", background: "#f9fafb", fontSize: 10, color: "#6b7280", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", whiteSpace: "nowrap" }}>
+            style={{ flex: 1, padding: "12px 16px", borderRadius: 8, border: "1px solid #e5e7eb", background: "#f9fafb", fontSize: 14, fontWeight: 600, color: "#6b7280", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s" }}
+            onMouseEnter={e => e.currentTarget.style.background = "#f3f4f6"}
+            onMouseLeave={e => e.currentTarget.style.background = "#f9fafb"}
+          >
             Reset
           </button>
+          <button onClick={() => {}} 
+            style={{ flex: 1, padding: "12px 16px", borderRadius: 8, border: "none", background: "#1B4332", fontSize: 14, fontWeight: 600, color: "#fff", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s" }}
+            onMouseEnter={e => e.currentTarget.style.background = "#163829"}
+            onMouseLeave={e => e.currentTarget.style.background = "#1B4332"}
+          >
+            Apply
+          </button>
         </div>
-        <span style={{ fontSize: 10, fontWeight: 600, color: "#1B4332", background: "#F0F4EF", padding: "3px 10px", borderRadius: 20, whiteSpace: "nowrap" }}>
-          {bookings.length} found
-        </span>
+
+        <div style={{ textAlign: "center" }}>
+          <span style={{ fontSize: 12, fontWeight: 600, color: "#1B4332", background: "#F0F4EF", padding: "4px 16px", borderRadius: 20 }}>
+            {bookings.length} {bookings.length === 1 ? "Result" : "Results"}
+          </span>
+        </div>
       </div>
 
       {/* ── SUMMARY STATS ── */}

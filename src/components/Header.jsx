@@ -61,7 +61,7 @@ export default function Header({ title, onMenuClick }) {
       </h2>
 
       {/* Notification Bell */}
-      <div style={{ position: "relative" }}>
+      <div className="hm-desktop-only" style={{ position: "relative" }}>
         <button
           onClick={() => setShowNotif(!showNotif)}
           style={{ width: 38, height: 38, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 10, border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer", color: "#6b7280", position: "relative", flexShrink: 0 }}
@@ -140,10 +140,10 @@ export default function Header({ title, onMenuClick }) {
       {/* Avatar */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", flexShrink: 0 }}>
         <div style={{
-          width: 36, height: 36, borderRadius: "50%",
+          width: 40, height: 40, borderRadius: 9999,
           background: "linear-gradient(135deg, #1B4332, #2D6A4F)",
           color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
-          fontWeight: 700, fontSize: 14, lineHeight: 1, flexShrink: 0,
+          fontWeight: 600, fontSize: 14, lineHeight: 1, flexShrink: 0,
           boxShadow: "0 2px 8px rgba(27,67,50,0.35)"
         }}>R</div>
         <span className="hm-avatar-name" style={{ fontSize: 13, fontWeight: 500, color: "#374151" }}>{user?.role === "Tester" && user?.name === "Sandbox Auditor" ? "Manager" : user?.name || "User"}</span>
