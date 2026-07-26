@@ -3,6 +3,7 @@ import { CheckCircle, MessageCircle, TrendingUp, IndianRupee, AlertCircle, Bell 
 import { useToast } from "../components/Toast";
 import { useBookings } from "../context/BookingsContext";
 import { settingsAPI } from "../services/api";
+import CollectPaymentModal from "../components/CollectPaymentModal";
 
 const today = new Date();
 
@@ -22,9 +23,9 @@ export default function Payments() {
   const { addToast } = useToast();
   const { bookings, updateStatus } = useBookings();
   const [paid, setPaid]                   = useState({});
-  const [historyFilter, setHistoryFilter] = useState("All");
   const [reminderDays, setReminderDays]   = useState([3, 7]);
   const [sentReminders, setSentReminders] = useState({});
+  const [collectingFor, setCollectingFor] = useState(null);
 
   useEffect(() => {
     settingsAPI.get()
@@ -33,7 +34,7 @@ export default function Payments() {
   }, []);
 
   const pending   = useMemo(() => bookings.filter(b => b.status === "Pending Payment"), [bookings]);
-  const confirmed = useMemo(() => bookings.filter(b => b.status === "Confirmed" || b.status === "Completed"), [bookings]);
+  const confirmed = useMemo(() => bookings.filter(b => b.status === "Completed"), [bookings]);
 
   const totalRevenue  = useMemo(() => confirmed.reduce((s, b) => s + Number(b.totalAmount || 0), 0), [confirmed]);
   const totalAdvance  = useMemo(() => confirmed.reduce((s, b) => s + Number(b.advance || 0), 0), [confirmed]);
@@ -45,17 +46,12 @@ export default function Payments() {
     return pending.filter(b => !paid[b.id] && daysDue(b.date) >= 0 && daysDue(b.date) <= maxDays);
   }, [pending, paid, reminderDays]);
 
-  // History filter
-  const EVENT_TYPES = useMemo(() => ["All", ...new Set(confirmed.map(b => b.eventType).filter(Boolean))], [confirmed]);
-  const historyList = useMemo(() =>
-    historyFilter === "All" ? confirmed : confirmed.filter(b => b.eventType === historyFilter),
-    [confirmed, historyFilter]
-  );
-
-  const handleMarkPaid = (id) => {
-    setPaid(p => ({ ...p, [id]: true }));
-    updateStatus(id, "Confirmed");
-    addToast("Payment marked as received ✅", "success");
+  const handleCollectSubmit = async (id, updates) => {
+    await updateBooking(id, updates);
+    addToast("Payment collected successfully ✅", "success");
+    if (updates.status === "Completed") {
+      setPaid(p => ({ ...p, [id]: true }));
+    }
   };
 
   const handleSendReminder = (b, isAuto = false) => {
@@ -230,11 +226,11 @@ export default function Payments() {
                             </span>
                           ) : (
                             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                              <button onClick={() => handleMarkPaid(b.id)}
+                              <button onClick={() => setCollectingFor(b)}
                                 style={{ padding: "5px 14px", borderRadius: 8, background: "#1B4332", color: "#fff", border: "none", cursor: "pointer", fontSize: 11, fontWeight: 700 }}
                                 onMouseEnter={e => e.currentTarget.style.background = "#163829"}
                                 onMouseLeave={e => e.currentTarget.style.background = "#1B4332"}>
-                                Mark Paid
+                                Collect
                               </button>
                               <button onClick={() => handleSendReminder(b)}
                                 style={{ padding: "5px 10px", borderRadius: 8, background: sentReminders[b.id] ? "#e5e7eb" : "#25D366", color: sentReminders[b.id] ? "#374151" : "#fff", border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", gap: 3 }}>
@@ -287,9 +283,9 @@ export default function Payments() {
                           </div>
                         ) : (
                           <>
-                            <button onClick={() => handleMarkPaid(b.id)}
+                            <button onClick={() => setCollectingFor(b)}
                               style={{ flex: 1, padding: 8, borderRadius: 8, background: "#1B4332", color: "#fff", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
-                              Mark Paid
+                              Collect
                             </button>
                             {days <= 7 && (
                               <button onClick={() => handleSendReminder(b)}
@@ -318,42 +314,14 @@ export default function Payments() {
             <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 700, color: "#111827", margin: 0 }}>
               Payment History
             </h3>
-            <div className="hm-desktop-only">
-              <div style={{ display: "flex", gap: 6, overflowX: "auto" }}>
-                {EVENT_TYPES.map(t => (
-                  <button key={t} onClick={() => setHistoryFilter(t)} style={{
-                    padding: "4px 10px", borderRadius: 20, border: `1.5px solid ${historyFilter === t ? "#1B4332" : "#e5e7eb"}`,
-                    background: historyFilter === t ? "#1B4332" : "#fff",
-                    color: historyFilter === t ? "#fff" : "#6b7280",
-                    fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap",
-                  }}>{t}</button>
-                ))}
-              </div>
-            </div>
-            <div className="hm-mobile-only">
-              <select
-                value={historyFilter}
-                onChange={(e) => setHistoryFilter(e.target.value)}
-                style={{
-                  padding: "4px 24px 4px 10px", borderRadius: 10, border: "1.5px solid #1B4332",
-                  background: "#1B4332", color: "#fff", fontSize: 10, fontWeight: 700,
-                  fontFamily: "'DM Sans', sans-serif", cursor: "pointer", outline: "none",
-                  appearance: "none", WebkitAppearance: "none",
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
-                  backgroundRepeat: "no-repeat", backgroundPosition: "right 8px center",
-                }}
-              >
-                {EVENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
           </div>
 
-          {historyList.length === 0 ? (
+          {confirmed.length === 0 ? (
             <p style={{ fontSize: 12, color: "#9ca3af", textAlign: "center", padding: "24px 0" }}>No records yet.</p>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-              {historyList.slice(0, 12).map((b, idx) => (
-                <div key={b.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: idx < historyList.length - 1 ? "1px solid #f3f4f6" : "none" }}>
+              {confirmed.slice(0, 12).map((b, idx) => (
+                <div key={b.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: idx < confirmed.length - 1 ? "1px solid #f3f4f6" : "none" }}>
                   <div style={{ width: 34, height: 34, borderRadius: 9, background: b.status === "Completed" ? "#f3f4f6" : "#dcfce7", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <CheckCircle size={15} color={b.status === "Completed" ? "#9ca3af" : "#15803d"} />
                   </div>
@@ -402,6 +370,14 @@ export default function Payments() {
           </div>
         </div>
       </div>
+
+      {collectingFor && (
+        <CollectPaymentModal
+          booking={collectingFor}
+          onClose={() => setCollectingFor(null)}
+          onCollect={handleCollectSubmit}
+        />
+      )}
     </div>
   );
 }

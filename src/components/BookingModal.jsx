@@ -32,6 +32,7 @@ export default function BookingModal({ onClose, prefillDate = "", editData = nul
     totalAmount: editData?.totalAmount ?? "",
     notes: editData?.notes ?? "",
     status: editData?.status ?? "Enquiry",
+    paymentMode: "UPI",
   });
 
   const [settings, setSettings] = useState(null);
@@ -43,7 +44,7 @@ export default function BookingModal({ onClose, prefillDate = "", editData = nul
   const STATUS_OPTIONS = [
     { value: "Enquiry", emoji: "🔵", color: "#3b82f6", bg: "#dbeafe" },
     { value: "Pending Payment", emoji: "🟡", color: "#d97706", bg: "#fef3c7" },
-    { value: "Confirmed", emoji: "🟢", color: "#15803d", bg: "#dcfce7" },
+    { value: "Completed", emoji: "🟢", color: "#15803d", bg: "#dcfce7" },
   ];
 
   if (!settings) return null;
@@ -73,7 +74,7 @@ export default function BookingModal({ onClose, prefillDate = "", editData = nul
         const tot = Number(updated.totalAmount || 0);
         if (tot > 0) {
           if (adv >= tot) {
-            updated.status = "Confirmed";
+            updated.status = "Completed";
           } else if (adv > 0) {
             updated.status = "Pending Payment";
           } else {
@@ -114,11 +115,17 @@ export default function BookingModal({ onClose, prefillDate = "", editData = nul
       return;
     }
 
+    const payload = { ...form, status: form.status || "Enquiry" };
+    if (adv > 0 && !editData) {
+      const modeNote = `[Advance ₹${adv} via ${form.paymentMode}]`;
+      payload.notes = payload.notes ? `${modeNote}\n${payload.notes}` : modeNote;
+    }
+
     if (editData) {
-      updateBooking(editData.id, form);
+      updateBooking(editData.id, payload);
       addToast("Booking updated successfully! ✏️", "success");
     } else {
-      addBooking({ ...form, status: form.status || "Enquiry" });
+      addBooking(payload);
       addToast("Booking saved successfully! 🎉", "success");
     }
     onClose();
@@ -266,6 +273,7 @@ export default function BookingModal({ onClose, prefillDate = "", editData = nul
                   onBlur={e => e.target.style.borderColor = "#e5e7eb"} />
               </div>
             </div>
+
             {/* Auto-calc hint */}
             {selectedHall && (
               <div style={{ background: "#f0faf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: "8px 12px", marginTop: 10, display: "flex", gap: 8, alignItems: "center" }}>
@@ -273,6 +281,28 @@ export default function BookingModal({ onClose, prefillDate = "", editData = nul
                 <p style={{ fontSize: 11, color: "#15803d", margin: 0 }}>
                   <strong>{selectedHall.name}</strong> — {form.session}: ₹{(selectedHall.price * (form.session === "Full Day" ? 2 : 1)).toLocaleString()} (auto-calculated)
                 </p>
+              </div>
+            )}
+
+            {/* Payment Mode (only shows if advance > 0) */}
+            {Number(form.advance) > 0 && (
+              <div style={{ marginTop: 16, background: "#f9fafb", padding: 12, borderRadius: 12, border: "1px solid #e5e7eb" }}>
+                <label style={labelSt}>Payment Mode for Advance</label>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {["UPI", "Cash", "Bank"].map(m => (
+                    <label key={m} style={{
+                      flex: 1, textAlign: "center", padding: "8px 4px", borderRadius: 8, cursor: "pointer",
+                      border: `1.5px solid ${form.paymentMode === m ? "#1B4332" : "#d1d5db"}`,
+                      background: form.paymentMode === m ? "#f0fdf4" : "#fff",
+                      color: form.paymentMode === m ? "#1B4332" : "#374151",
+                      fontSize: 12, fontWeight: 700, transition: "all 0.15s",
+                    }}>
+                      <input type="radio" name="paymentMode" value={m} checked={form.paymentMode === m}
+                        onChange={handleChange} style={{ display: "none" }} />
+                      {m}
+                    </label>
+                  ))}
+                </div>
               </div>
             )}
           </div>

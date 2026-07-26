@@ -48,6 +48,24 @@ router.get("/me", auth, async (req, res) => {
   }
 });
 
+// PUT /api/auth/profile — update current user profile
+router.put("/profile", auth, async (req, res) => {
+  try {
+    const { name, password } = req.body;
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    if (name) user.name = name;
+    if (password) user.password = password; // triggers beforeSave hook
+
+    await user.save();
+
+    res.json({ success: true, user: { id: user.id, name: user.name, email: user.email, role: user.role, phone: user.phone } });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update profile" });
+  }
+});
+
 // POST /api/auth/register (Owner only — create Manager/Staff accounts)
 router.post("/register", auth, async (req, res) => {
   try {

@@ -4,18 +4,14 @@ import { useToast } from "./Toast";
 import { useBookings } from "../context/BookingsContext";
 
 const STATUS_FLOW = {
-  Enquiry:          { next: "Confirmed",  label: "✅ Confirm Booking",  color: "#15803d", bg: "#dcfce7" },
-  Confirmed:        { next: "Completed",  label: "🏁 Mark Completed",   color: "#1d4ed8", bg: "#dbeafe" },
-  "Pending Payment":{ next: "Confirmed",  label: "💰 Mark Paid",        color: "#a16207", bg: "#fef9c3" },
+  Enquiry:          { next: "Completed",  label: "✅ Mark Completed",  color: "#15803d", bg: "#dcfce7" },
   Completed:        { next: null, label: null, color: null, bg: null },
+  "Pending Payment":{ next: "Completed",  label: "💰 Mark Paid",        color: "#a16207", bg: "#fef9c3" },
   Cancelled:        { next: null, label: null, color: null, bg: null },
 };
 
 const STATUS_STYLE = {
-  Confirmed:        { bg: "#dcfce7", color: "#15803d", dot: "#22c55e" },
-  "Pending Payment":{ bg: "#fef9c3", color: "#a16207", dot: "#eab308" },
-  Enquiry:          { bg: "#dbeafe", color: "#1d4ed8", dot: "#3b82f6" },
-  Completed:        { bg: "#f3f4f6", color: "#374151", dot: "#9ca3af" },
+  Completed:        { bg: "#dcfce7", color: "#15803d", dot: "#22c55e" },
   Cancelled:        { bg: "#fee2e2", color: "#b91c1c", dot: "#ef4444" },
 };
 
@@ -55,7 +51,7 @@ export default function BookingDetailModal({ booking: initialBooking, onClose, o
     if (confirmAction.type === "status") {
       updateStatus(booking.id, confirmAction.status);
       setBooking(prev => ({ ...prev, status: confirmAction.status }));
-      const msgs = { Confirmed: "Booking confirmed! ✅", Completed: "Booking completed! 🏁" };
+      const msgs = { Completed: "Booking completed! 🏁" };
       addToast(msgs[confirmAction.status] || "Status updated", "success");
     } else if (confirmAction.type === "cancel") {
       updateStatus(booking.id, "Cancelled");

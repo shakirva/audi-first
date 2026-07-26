@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Menu, Bell, ChevronDown, Monitor, Database, AlertTriangle } from "lucide-react";
+import { Menu, Bell, ChevronDown, Monitor, Database, AlertTriangle, Settings, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useRole } from "../context/RoleContext";
+import ProfileModal from "./ProfileModal";
 const notifications = [];
 
 const notifIcons = { warning: "⚠️", info: "ℹ️", reminder: "🔔" };
@@ -16,6 +17,8 @@ export default function Header({ title, onMenuClick }) {
 
   const [showEnvDropdown, setShowEnvDropdown] = useState(false);
   const [showSandboxConfirm, setShowSandboxConfirm] = useState(false);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   const handleEnterSandbox = () => {
     setShowSandboxConfirm(false);
@@ -138,16 +141,34 @@ export default function Header({ title, onMenuClick }) {
       )}
 
       {/* Avatar */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", flexShrink: 0 }}>
-        <div style={{
-          width: 40, height: 40, borderRadius: 9999,
-          background: "linear-gradient(135deg, #1B4332, #2D6A4F)",
-          color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
-          fontWeight: 600, fontSize: 14, lineHeight: 1, flexShrink: 0,
-          boxShadow: "0 2px 8px rgba(27,67,50,0.35)"
-        }}>R</div>
-        <span className="hm-avatar-name" style={{ fontSize: 13, fontWeight: 500, color: "#374151" }}>{user?.role === "Tester" && user?.name === "Sandbox Auditor" ? "Manager" : user?.name || "User"}</span>
-        <ChevronDown size={13} style={{ color: "#9ca3af" }} />
+      <div style={{ position: "relative" }}>
+        <div onClick={() => setShowProfileDropdown(!showProfileDropdown)} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", flexShrink: 0 }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 9999,
+            background: "linear-gradient(135deg, #1B4332, #2D6A4F)",
+            color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
+            fontWeight: 600, fontSize: 14, lineHeight: 1, flexShrink: 0,
+            boxShadow: "0 2px 8px rgba(27,67,50,0.35)"
+          }}>{(user?.name || "U")[0].toUpperCase()}</div>
+          <span className="hm-avatar-name" style={{ fontSize: 13, fontWeight: 500, color: "#374151" }}>{user?.role === "Tester" && user?.name === "Sandbox Auditor" ? "Manager" : user?.name || "User"}</span>
+          <ChevronDown size={13} style={{ color: "#9ca3af" }} />
+        </div>
+        
+        {showProfileDropdown && (
+          <div style={{ position: "absolute", top: 48, right: 0, width: 180, background: "#fff", borderRadius: 12, boxShadow: "0 10px 25px rgba(0,0,0,0.1)", border: "1px solid #f3f4f6", overflow: "hidden", zIndex: 50 }}>
+            <div style={{ padding: "8px 12px", fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em", borderBottom: "1px solid #f9fafb" }}>
+              My Account
+            </div>
+            <div style={{ padding: 6 }}>
+              <button onClick={() => { setShowProfileDropdown(false); setShowProfileModal(true); }} style={{ width: "100%", textAlign: "left", padding: "8px 12px", borderRadius: 6, background: "transparent", border: "none", cursor: "pointer", fontSize: 13, color: "#374151", display: "flex", alignItems: "center", gap: 8 }} onMouseEnter={e => e.currentTarget.style.background = "#f9fafb"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                <Settings size={14} color="#6b7280" /> Profile Settings
+              </button>
+              <button onClick={() => { setShowProfileDropdown(false); navigate("/login"); }} style={{ width: "100%", textAlign: "left", padding: "8px 12px", borderRadius: 6, background: "transparent", border: "none", cursor: "pointer", fontSize: 13, color: "#ef4444", display: "flex", alignItems: "center", gap: 8, marginTop: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#fef2f2"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                <LogOut size={14} color="#ef4444" /> Logout
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </header>
 
@@ -174,6 +195,11 @@ export default function Header({ title, onMenuClick }) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Profile Edit Modal */}
+      {showProfileModal && (
+        <ProfileModal onClose={() => setShowProfileModal(false)} />
       )}
     </>
   );

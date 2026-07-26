@@ -67,7 +67,7 @@ router.get("/stats/dashboard", auth, tenantScope, subscriptionGuard, async (req,
         environmentId: req.environmentId
       }
     });
-    const confirmed = allBookings.filter(b => b.status === "Confirmed" || b.status === "Completed");
+    const confirmed = allBookings.filter(b => b.status === "Completed");
     const pending = allBookings.filter(b => b.status === "Pending Payment");
     const enquiries = allBookings.filter(b => b.status === "Enquiry");
     const totalRevenue = confirmed.reduce((s, b) => s + b.totalAmount, 0);
@@ -97,17 +97,17 @@ router.get("/stats/comparison", auth, requireRole("Owner", "SuperAdmin"), async 
     const prodBookings = prodEnv ? await Booking.findAll({ where: { tenantId, environmentId: prodEnv.id } }) : [];
     const sandboxBookings = sandboxEnv ? await Booking.findAll({ where: { tenantId, environmentId: sandboxEnv.id } }) : [];
 
-    const prodConfirmed = prodBookings.filter(b => b.status === "Confirmed" || b.status === "Completed");
-    const sandboxConfirmed = sandboxBookings.filter(b => b.status === "Confirmed" || b.status === "Completed");
+    const prodCompleted = prodBookings.filter(b => b.status === "Completed");
+    const sandboxCompleted = sandboxBookings.filter(b => b.status === "Completed");
 
     res.json({
       production: {
         bookings: prodBookings.length,
-        revenue: prodConfirmed.reduce((s, b) => s + b.totalAmount, 0)
+        revenue: prodCompleted.reduce((s, b) => s + b.totalAmount, 0)
       },
       sandbox: {
         bookings: sandboxBookings.length,
-        revenue: sandboxConfirmed.reduce((s, b) => s + b.totalAmount, 0)
+        revenue: sandboxCompleted.reduce((s, b) => s + b.totalAmount, 0)
       }
     });
   } catch (err) {

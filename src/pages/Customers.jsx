@@ -15,8 +15,8 @@ const buildCustomers = (bookings) => {
 };
 
 const STATUS_DOT = {
-  Confirmed: "#22c55e", "Pending Payment": "#eab308",
-  Enquiry: "#3b82f6", Completed: "#9ca3af", Cancelled: "#ef4444",
+  Completed: "#22c55e", "Pending Payment": "#eab308",
+  Enquiry: "#3b82f6", Cancelled: "#ef4444",
 };
 
 export default function Customers() {
@@ -52,7 +52,7 @@ export default function Customers() {
         {[
           { label: "Total Customers", value: customers.length, icon: "👥", color: "#1B4332", bg: "#f0faf4" },
           { label: "Total Bookings",  value: bookings.length, icon: "📅", color: "#D4A017", bg: "#fffbeb" },
-          { label: "Total Revenue",   value: "₹" + (bookings.filter(b=>b.status==="Confirmed"||b.status==="Completed").reduce((s,b)=>s+b.totalAmount,0) / 100000).toFixed(1) + "L", icon: "💰", color: "#1d4ed8", bg: "#eff6ff" },
+          { label: "Total Revenue",   value: "₹" + (bookings.filter(b=>b.status==="Completed").reduce((s,b)=>s+b.totalAmount,0) / 100000).toFixed(1) + "L", icon: "💰", color: "#1d4ed8", bg: "#eff6ff" },
         ].map(s => (
           <div key={s.label} style={{ background: s.bg, borderRadius: 10, padding: "10px 12px", display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 22 }}>{s.icon}</span>
@@ -68,7 +68,7 @@ export default function Customers() {
       <div className="hm-customer-grid">
         {filtered.map(c => {
           const isOpen = expanded === c.phone;
-          const totalSpent = c.bookings.filter(b => b.status === "Confirmed" || b.status === "Completed").reduce((s, b) => s + b.totalAmount, 0);
+          const totalSpent = c.bookings.filter(b => b.status === "Completed").reduce((s, b) => s + b.totalAmount, 0);
           const lastEvent  = [...c.bookings].sort((a, b) => b.date.localeCompare(a.date))[0];
           const initials   = c.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
 

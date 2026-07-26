@@ -2,7 +2,7 @@ import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid, Cell,
 } from "recharts";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Download } from "lucide-react";
 import { useToast } from "../components/Toast";
 import { useBookings } from "../context/BookingsContext";
@@ -12,6 +12,28 @@ const sTitle = { fontFamily: "'Playfair Display', serif", fontSize: 13, fontWeig
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const PEAK_DAYS = ["Sat", "Sun", "Fri"];
+
+function ChartWrapper({ children, defaultHeight = 160 }) {
+  const [size, setSize] = useState({ width: 0, height: defaultHeight });
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    const observer = new ResizeObserver((entries) => {
+      if (entries[0] && entries[0].contentRect.width > 0) {
+        setSize({ width: entries[0].contentRect.width, height: entries[0].contentRect.height });
+      }
+    });
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} style={{ width: "100%", height: defaultHeight, position: "relative" }}>
+      {size.width > 0 && children(size.width, size.height)}
+    </div>
+  );
+}
 
 // ── PDF generators ──
 function printHTML(title, bodyHTML) {
@@ -72,7 +94,7 @@ function downloadRevenueReport(bookings) {
   // Compute monthly revenue dynamically
   const revenueMap = {};
   bookings.forEach(b => {
-    if (b.status === "Confirmed" || b.status === "Completed") {
+    if (b.status === "Completed") {
       const m = new Date(b.date).toLocaleString('default', { month: 'short', year: '2-digit' });
       revenueMap[m] = (revenueMap[m] || 0) + b.totalAmount;
     }
@@ -157,8 +179,8 @@ export default function Reports() {
 
   const bookings = ctxBookings.filter(b => b.date >= fromDate && b.date <= toDate);
 
-  const totalRevenue = bookings.filter(b => b.status === "Confirmed" || b.status === "Completed").reduce((s, b) => s + b.totalAmount, 0);
-  const confirmed    = bookings.filter(b => b.status === "Confirmed").length || 1; // avoid /0
+  const totalRevenue = bookings.filter(b => b.status === "Completed").reduce((s, b) => s + b.totalAmount, 0);
+  const completedCount = bookings.filter(b => b.status === "Completed").length || 1; // avoid /0
 
   const peakData = WEEKDAYS.map(day => {
     const bCount = bookings.filter(b => new Date(b.date).toLocaleString('en-US', { weekday: 'short' }) === day).length;
@@ -175,7 +197,7 @@ export default function Reports() {
 
   const revenueMap = {};
   bookings.forEach(b => {
-    if (b.status === "Confirmed" || b.status === "Completed") {
+    if (b.status === "Completed") {
       const monthStr = new Date(b.date).toLocaleString('default', { month: 'short' });
       revenueMap[monthStr] = (revenueMap[monthStr] || 0) + b.totalAmount;
     }
@@ -243,9 +265,9 @@ export default function Reports() {
       <div className="hm-stat-grid">
         {[
           { label: "Total Bookings",  value: bookings.length,     color: "#1B4332", bg: "#f0faf4", icon: "📅" },
-          { label: "Confirmed",       value: bookings.filter(b => b.status === "Confirmed").length,        color: "#15803d", bg: "#dcfce7", icon: "✅" },
+          { label: "Completed",       value: bookings.filter(b => b.status === "Completed").length,        color: "#15803d", bg: "#dcfce7", icon: "✅" },
           { label: "Total Revenue",   value: `₹${(totalRevenue/100000).toFixed(1)}L`, color: "#D4A017", bg: "#fffbeb", icon: "💰" },
-          { label: "Avg. Booking",    value: `₹${Math.round(totalRevenue/confirmed/1000).toFixed(0)}k`, color: "#2563eb", bg: "#eff6ff", icon: "📊" },
+          { label: "Avg. Booking",    value: `₹${Math.round(totalRevenue/completedCount/1000).toFixed(0)}k`, color: "#2563eb", bg: "#eff6ff", icon: "📊" },
         ].map(s => (
           <div key={s.label} style={{ background: s.bg, borderRadius: 10, padding: "10px 12px", display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 20 }}>{s.icon}</span>
@@ -263,36 +285,36 @@ export default function Reports() {
         {/* Revenue Trend */}
         <div style={{ ...card, minWidth: 0 }}>
           <p style={sTitle}>Revenue Trend</p>
-          <div style={{ position: "relative", width: "100%", height: 160 }}>
-            <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={monthlyRevenue} margin={{ left: -10, right: 5, top: 5, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-              <XAxis dataKey="month" tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} tickFormatter={v => `₹${v/100000}L`} />
-              <Tooltip formatter={v => [`₹${(v/100000).toFixed(1)}L`, "Revenue"]} contentStyle={{ borderRadius: 6, border: "none", fontSize: 11 }} />
-              <Line type="monotone" dataKey="revenue" stroke="#1B4332" strokeWidth={2} dot={{ fill: "#1B4332", r: 3 }} activeDot={{ r: 5 }} />
-            </LineChart>
-          </ResponsiveContainer>
-          </div>
+          <ChartWrapper defaultHeight={160}>
+            {(width, height) => (
+              <LineChart width={width} height={height} data={monthlyRevenue} margin={{ left: -10, right: 5, top: 5, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                <XAxis dataKey="month" tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} tickFormatter={v => `₹${(v/1000).toFixed(0)}k`} />
+                <Tooltip formatter={v => [`₹${(v/1000).toFixed(1)}k`, "Revenue"]} contentStyle={{ borderRadius: 6, border: "none", fontSize: 11, boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)" }} />
+                <Line type="monotone" dataKey="revenue" stroke="#1B4332" strokeWidth={2} dot={{ fill: "#1B4332", r: 3 }} activeDot={{ r: 5 }} />
+              </LineChart>
+            )}
+          </ChartWrapper>
         </div>
 
         {/* Peak Days */}
         <div style={{ ...card, minWidth: 0 }}>
           <p style={sTitle}>Bookings by Day</p>
-          <div style={{ position: "relative", width: "100%", height: 160 }}>
-            <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={peakData} barCategoryGap="35%" margin={{ left: -10, right: 5, top: 5, bottom: 5 }}>
-              <XAxis dataKey="day" tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={{ borderRadius: 6, border: "none", fontSize: 11 }} />
-              <Bar dataKey="bookings" radius={[4, 4, 0, 0]}>
-                {peakData.map((d, i) => (
-                  <Cell key={i} fill={d.peak ? "#D4A017" : "#1B4332"} opacity={d.peak ? 1 : 0.5} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-          </div>
+          <ChartWrapper defaultHeight={160}>
+            {(width, height) => (
+              <BarChart width={width} height={height} data={peakData} barCategoryGap="35%" margin={{ left: -10, right: 5, top: 5, bottom: 5 }}>
+                <XAxis dataKey="day" tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={{ borderRadius: 6, border: "none", fontSize: 11, boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)" }} />
+                <Bar dataKey="bookings" radius={[4, 4, 0, 0]}>
+                  {peakData.map((d, i) => (
+                    <Cell key={i} fill={d.peak ? "#D4A017" : "#1B4332"} opacity={d.peak ? 1 : 0.5} />
+                  ))}
+                </Bar>
+              </BarChart>
+            )}
+          </ChartWrapper>
           <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
               <div style={{ width: 8, height: 8, borderRadius: 2, background: "#D4A017" }} />

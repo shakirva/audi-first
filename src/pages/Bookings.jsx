@@ -10,10 +10,9 @@ import { useRole } from "../context/RoleContext";
 const TABS = ["All", "Pending Payment", "Enquiry", "Completed"];
 
 const STATUS_STYLE = {
-  Confirmed:       { bg: "#dcfce7", color: "#15803d", dot: "#22c55e" },
+  Completed:       { bg: "#dcfce7", color: "#15803d", dot: "#22c55e" },
   "Pending Payment":{ bg: "#fef9c3", color: "#a16207", dot: "#eab308" },
   Enquiry:         { bg: "#dbeafe", color: "#1d4ed8", dot: "#3b82f6" },
-  Completed:       { bg: "#f3f4f6", color: "#374151", dot: "#9ca3af" },
   Cancelled:       { bg: "#fee2e2", color: "#b91c1c", dot: "#ef4444" },
 };
 

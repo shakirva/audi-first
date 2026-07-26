@@ -25,7 +25,7 @@ function getDayStatus(dateStr, bookings, blackoutDates = []) {
   const dayBookings = bookings.filter(b => b.date === dateStr && b.status !== "Cancelled");
   if (dayBookings.length === 0) return "available";
 
-  const activeBookings = dayBookings.filter(b => b.status === "Confirmed" || b.status === "Completed" || b.status === "Pending Payment");
+  const activeBookings = dayBookings.filter(b => b.status === "Completed" || b.status === "Pending Payment");
   
   if (activeBookings.length === 0) return "enquiry";
 

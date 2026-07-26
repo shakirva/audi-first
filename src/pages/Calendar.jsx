@@ -16,10 +16,8 @@ function getFirstDay(year, month) {
 }
 
 const STATUS_STYLE = {
-  Confirmed:        { bg: "#dcfce7", color: "#15803d", dot: "#22c55e" },
+  Completed:        { bg: "#dcfce7", color: "#15803d", dot: "#22c55e" },
   "Pending Payment":{ bg: "#fef9c3", color: "#a16207", dot: "#eab308" },
-  Enquiry:          { bg: "#dbeafe", color: "#1d4ed8", dot: "#3b82f6" },
-  Completed:        { bg: "#f3f4f6", color: "#374151", dot: "#9ca3af" },
 };
 
 export default function Calendar() {
@@ -153,8 +151,7 @@ export default function Calendar() {
                     {dayBookings.slice(0, 3).map((b, bi) => {
                       const statusDotColor = b.status === "Enquiry" ? "#3b82f6"
                         : b.status === "Pending Payment" ? "#f59e0b"
-                        : b.status === "Confirmed" ? "#22c55e"
-                        : b.status === "Completed" ? "#9ca3af"
+                        : b.status === "Completed" ? "#22c55e"
                         : "#ef4444";
                       return (
                         <div key={bi} style={{
@@ -195,8 +192,7 @@ export default function Calendar() {
             {[
               { dot: "#3b82f6", label: "Enquiry" },
               { dot: "#f59e0b", label: "Pending" },
-              { dot: "#22c55e", label: "Confirmed" },
-              { dot: "#9ca3af", label: "Completed" },
+              { dot: "#22c55e", label: "Completed" },
             ].map(item => (
               <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 3 }}>
                 <div style={{ width: 6, height: 6, borderRadius: "50%", background: item.dot }} />
@@ -274,10 +270,10 @@ export default function Calendar() {
             const mb = bookings.filter(b => b.date.startsWith(monthStr));
             return [
               { label: "Total bookings", value: mb.length, color: "#1B4332" },
-              { label: "Confirmed",      value: mb.filter(b => b.status === "Confirmed").length, color: "#15803d" },
+              { label: "Completed",      value: mb.filter(b => b.status === "Completed").length, color: "#15803d" },
               { label: "Pending",        value: mb.filter(b => b.status === "Pending Payment").length, color: "#d97706" },
               { label: "Enquiry",        value: mb.filter(b => b.status === "Enquiry").length, color: "#3b82f6" },
-              { label: "Revenue",        value: "₹" + mb.filter(b=>b.status==="Confirmed"||b.status==="Completed").reduce((s,b)=>s+b.totalAmount,0).toLocaleString(), color: "#D4A017" },
+              { label: "Revenue",        value: "₹" + mb.filter(b=>b.status==="Completed").reduce((s,b)=>s+b.totalAmount,0).toLocaleString(), color: "#D4A017" },
             ].map(item => (
               <div key={item.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                 <span style={{ fontSize: 11, color: "#6b7280" }}>{item.label}</span>

@@ -109,6 +109,11 @@ export function RoleProvider({ children }) {
     setManagerRevenueEnabledState(val);
   };
 
+  const updateUser = (newUser) => {
+    setUser(newUser);
+    localStorage.setItem("hm_user", JSON.stringify(newUser));
+  };
+
   const can = (permission) => {
     if (role === "Manager" && !managerRevenueEnabled) {
       if (["canViewRevenue", "canViewPayments", "canViewReports"].includes(permission)) {
@@ -131,6 +136,7 @@ export function RoleProvider({ children }) {
       can,
       managerRevenueEnabled,
       setManagerRevenueEnabled,
+      updateUser,
     }}>
       {children}
     </RoleContext.Provider>

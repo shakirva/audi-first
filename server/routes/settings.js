@@ -111,7 +111,7 @@ router.get("/customers", auth, tenantScope, subscriptionGuard, async (req, res) 
         totalAmount: b.totalAmount,
         status: b.status,
       });
-      if (b.status === "Confirmed" || b.status === "Completed") {
+      if (b.status === "Completed") {
         customerMap[b.phone].totalSpent += b.totalAmount;
       }
     });
@@ -139,7 +139,7 @@ router.post("/sandbox/reset", auth, requireRole("Owner"), tenantScope, subscript
     
     // Create some default sample data
     await Booking.bulkCreate([
-      { tenantId: req.tenantId, environmentId: req.environmentId, customerName: "Sample Wedding Booking", phone: "9000000001", eventType: "Wedding", hall: "Main Hall", date: "2026-08-15", session: "Full Day", guests: 300, advance: 5000, totalAmount: 25000, status: "Confirmed", notes: "Sample booking" },
+      { tenantId: req.tenantId, environmentId: req.environmentId, customerName: "Sample Wedding Booking", phone: "9000000001", eventType: "Wedding", hall: "Main Hall", date: "2026-08-15", session: "Full Day", guests: 300, advance: 5000, totalAmount: 25000, status: "Completed", notes: "Sample booking" },
       { tenantId: req.tenantId, environmentId: req.environmentId, customerName: "Sample Birthday Event", phone: "9000000002", eventType: "Birthday", hall: "Mini Hall", date: "2026-08-20", session: "Evening", guests: 80, advance: 2000, totalAmount: 8000, status: "Pending Payment", notes: "Sample booking" }
     ]);
     

@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, Tooltip, ResponsiveContainer,
+  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
+  AreaChart, Area
 } from "recharts";
 import { Calendar, Users, IndianRupee, Clock, MessageCircle, Database } from "lucide-react";
 import StatCard from "../components/StatCard";
@@ -13,6 +14,28 @@ import { bookingsAPI } from "../services/api";
 
 const todayStr = new Date().toISOString().split("T")[0];
 const PIE_COLORS = ["#1B4332", "#2D6A4F", "#D4A017", "#40916C", "#74C69D", "#95d5b2"];
+
+function ChartWrapper({ children, defaultHeight = 300 }) {
+  const [size, setSize] = useState({ width: 0, height: defaultHeight });
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    const observer = new ResizeObserver((entries) => {
+      if (entries[0] && entries[0].contentRect.width > 0) {
+        setSize({ width: entries[0].contentRect.width, height: entries[0].contentRect.height });
+      }
+    });
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} style={{ width: "100%", height: defaultHeight, position: "relative" }}>
+      {size.width > 0 && children(size.width, size.height)}
+    </div>
+  );
+}
 
 function getDateRange(filter) {
   const now = new Date();
@@ -104,11 +127,11 @@ export default function Dashboard() {
 
   const pending = filtered.filter((b) => b.status === "Pending Payment").length;
   const totalRevenue = filtered
-    .filter((b) => b.status === "Confirmed" || b.status === "Completed")
+    .filter((b) => b.status === "Completed")
     .reduce((s, b) => s + Number(b.totalAmount || 0), 0);
     
   const prevRevenue = prevFiltered
-    .filter((b) => b.status === "Confirmed" || b.status === "Completed")
+    .filter((b) => b.status === "Completed")
     .reduce((s, b) => s + Number(b.totalAmount || 0), 0);
 
   const customersCount = new Set(filtered.map((b) => b.phone)).size;
@@ -129,22 +152,33 @@ export default function Dashboard() {
   });
   const eventTypes = Object.keys(eventTypeMap).map(k => ({ name: k, value: eventTypeMap[k] }));
 
-  // Compute Monthly Revenue (for the past 6 months based on bookings)
+  // Compute Monthly Revenue
   const revenueMap = {};
+  const currentYear = new Date().getFullYear();
+  
   bookings.forEach(b => {
-    if (b.status === "Confirmed" || b.status === "Completed") {
-      const monthStr = new Date(getDs(b.date)).toLocaleString('default', { month: 'short' });
+    if (b.status === "Completed") {
+      const d = new Date(getDs(b.date));
+      if (dateFilter === "Year" && d.getFullYear() !== currentYear) return;
+      const monthStr = d.toLocaleString('default', { month: 'short' });
       revenueMap[monthStr] = (revenueMap[monthStr] || 0) + Number(b.totalAmount || 0);
     }
   });
   
-  // Create an array of the last 6 months
   const monthlyRevenue = [];
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date();
-    d.setMonth(d.getMonth() - i);
-    const m = d.toLocaleString('default', { month: 'short' });
-    monthlyRevenue.push({ month: m, revenue: revenueMap[m] || 0 });
+  if (dateFilter === "Year") {
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    monthNames.forEach(m => {
+      monthlyRevenue.push({ month: m, revenue: revenueMap[m] || 0 });
+    });
+  } else {
+    // Default to last 6 months for other filters
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const m = d.toLocaleString('default', { month: 'short' });
+      monthlyRevenue.push({ month: m, revenue: revenueMap[m] || 0 });
+    }
   }
 
   const quickActions = [
@@ -199,7 +233,7 @@ export default function Dashboard() {
       {/* ── STAT CARDS ── */}
       <div className="hm-stat-grid">
         <StatCard title="Total Bookings" value={filtered.length}  sub={dateFilter}          icon={Calendar}      color="green" trend={calcTrend(filtered.length, prevFiltered.length)} trendUp={filtered.length >= prevFiltered.length} />
-        {can("canViewRevenue") && <StatCard title="Revenue"       value={`₹${(totalRevenue / 1000).toFixed(1)}k`} sub="Confirmed" icon={IndianRupee} color="gold" trend={calcTrend(totalRevenue, prevRevenue)} trendUp={totalRevenue >= prevRevenue} />}
+        {can("canViewRevenue") && <StatCard title="Revenue"       value={`₹${(totalRevenue / 1000).toFixed(1)}k`} sub="Completed" icon={IndianRupee} color="gold" trend={calcTrend(totalRevenue, prevRevenue)} trendUp={totalRevenue >= prevRevenue} />}
         {can("canViewRevenue") && <StatCard title="Pending"       value={pending}         sub="Awaiting payment"   icon={Clock}         color="red"   trend={`${pending} due`} trendUp={false} />}
         <StatCard title="Customers"       value={customersCount} sub="Unique clients" icon={Users}  color="blue"  trend={`${customersCount - prevCustomersCount >= 0 ? "+" : ""}${customersCount - prevCustomersCount} new`} trendUp={customersCount >= prevCustomersCount} />
       </div>
@@ -213,38 +247,56 @@ export default function Dashboard() {
         {can("canViewRevenue") && (
         <div style={{ ...S.card, minWidth: 0 }}>
           <p style={S.sectionTitle}>Monthly Revenue (₹)</p>
-          <div style={{ position: "relative", width: "100%", height: 280 }}>
-            <ResponsiveContainer width="100%" height="100%" className="hm-mobile-chart">
-            <BarChart data={monthlyRevenue} barCategoryGap="30%">
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${v / 1000}k`} />
-              <Tooltip
-                formatter={(v) => [`₹${v.toLocaleString()}`, "Revenue"]}
-                contentStyle={{ borderRadius: 10, border: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.12)", fontSize: 12 }}
-                cursor={{ fill: "rgba(27,67,50,0.05)" }}
-              />
-              <Bar dataKey="revenue" fill="#1B4332" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-          </div>
+          <ChartWrapper defaultHeight={300}>
+            {(width, height) => (
+              <BarChart width={width} height={height} data={monthlyRevenue} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#1B4332" stopOpacity={1}/>
+                    <stop offset="100%" stopColor="#2D6A4F" stopOpacity={0.7}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#6b7280" }} axisLine={false} tickLine={false} tickMargin={10} />
+                <YAxis tick={{ fontSize: 12, fill: "#6b7280" }} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${v / 1000}k`} />
+                <Tooltip
+                  formatter={(v) => [`₹${v.toLocaleString()}`, "Revenue"]}
+                  contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)", fontSize: 13, fontWeight: "bold" }}
+                  cursor={{ fill: "rgba(27,67,50,0.04)" }}
+                />
+                <Bar dataKey="revenue" fill="url(#colorRevenue)" radius={[6, 6, 0, 0]} maxBarSize={45} />
+              </BarChart>
+            )}
+          </ChartWrapper>
         </div>
         )}
 
         {/* Pie Chart */}
         <div style={{ ...S.card, minWidth: 0 }}>
           <p style={S.sectionTitle}>Event Types</p>
-          <div style={{ position: "relative", width: "100%", height: 220 }}>
-            <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie data={eventTypes} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} innerRadius={42} paddingAngle={3}>
-                {eventTypes.map((_, i) => (
-                  <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip contentStyle={{ borderRadius: 8, border: "none", fontSize: 12 }} />
-            </PieChart>
-          </ResponsiveContainer>
-          </div>
+          <ChartWrapper defaultHeight={260}>
+            {(width, height) => (
+              <PieChart width={width} height={height}>
+                <Pie 
+                  data={eventTypes} 
+                  dataKey="value" 
+                  nameKey="name" 
+                  cx="50%" 
+                  cy="50%" 
+                  outerRadius={90} 
+                  innerRadius={60} 
+                  paddingAngle={4}
+                >
+                  {eventTypes.map((_, i) => (
+                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)", fontSize: 13, fontWeight: "bold" }} 
+                />
+              </PieChart>
+            )}
+          </ChartWrapper>
           <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 4 }}>
             {eventTypes.map((e, i) => (
               <div key={e.name} style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -370,7 +422,7 @@ export default function Dashboard() {
             </p>
             {[
               { label: "New bookings",   value: filtered.length, color: "#1B4332" },
-              ...(can("canViewRevenue") ? [{ label: "Revenue", value: "₹" + filtered.filter(b => b.status === "Confirmed" || b.status === "Completed").reduce((s,b)=>s+b.totalAmount,0).toLocaleString(), color: "#D4A017" }] : []),
+              ...(can("canViewRevenue") ? [{ label: "Revenue", value: "₹" + filtered.filter(b => b.status === "Completed").reduce((s,b)=>s+b.totalAmount,0).toLocaleString(), color: "#D4A017" }] : []),
               { label: "Pending dues",   value: pending + " bookings", color: "#C0392B" },
             ].map(item => (
               <div key={item.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
@@ -380,42 +432,7 @@ export default function Dashboard() {
             ))}
           </div>
 
-          {/* Sandbox vs Production Comparison (Owner/SuperAdmin only) */}
-          {comparisonStats && (
-            <div style={{ marginTop: 20, paddingTop: 20, borderTop: "1px solid #f3f4f6" }}>
-              <p style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "#1B4332", marginBottom: 14, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                <Database size={14} /> Environment Overview
-              </p>
-              
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                {/* Production */}
-                <div style={{ background: "#f0fdf4", padding: "12px", borderRadius: 10, border: "1px solid #bbf7d0" }}>
-                  <p style={{ fontSize: 10, fontWeight: 700, color: "#166534", margin: "0 0 6px 0", textTransform: "uppercase" }}>Production</p>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                    <span style={{ fontSize: 11, color: "#6b7280" }}>Revenue</span>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: "#1B4332" }}>₹{(comparisonStats.production.revenue / 1000).toFixed(1)}k</span>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ fontSize: 11, color: "#6b7280" }}>Bookings</span>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: "#1B4332" }}>{comparisonStats.production.bookings}</span>
-                  </div>
-                </div>
 
-                {/* Sandbox */}
-                <div style={{ background: "#fffbeb", padding: "12px", borderRadius: 10, border: "1px solid #fde68a" }}>
-                  <p style={{ fontSize: 10, fontWeight: 700, color: "#b45309", margin: "0 0 6px 0", textTransform: "uppercase" }}>Sandbox</p>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                    <span style={{ fontSize: 11, color: "#6b7280" }}>Revenue</span>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: "#b45309" }}>₹{(comparisonStats.sandbox.revenue / 1000).toFixed(1)}k</span>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ fontSize: 11, color: "#6b7280" }}>Bookings</span>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: "#b45309" }}>{comparisonStats.sandbox.bookings}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
       </div>

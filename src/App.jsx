@@ -85,12 +85,12 @@ function AppGate() {
 
 
 export default function App() {
-  const { isOnline, isInstallable, hasUpdate, installApp, applyUpdate, dismissUpdate } = usePWA();
+  const { isOnline, isInstallable, hasUpdate, installApp, dismissInstall, applyUpdate, dismissUpdate } = usePWA();
 
   return (
     <>
       {!isOnline && <OfflineBanner />}
-      {isInstallable && <PWAInstallPrompt onInstall={installApp} onDismiss={() => {}} />}
+      {isInstallable && <PWAInstallPrompt onInstall={installApp} onDismiss={dismissInstall} />}
       {hasUpdate && <PWAUpdatePrompt onUpdate={applyUpdate} onDismiss={dismissUpdate} />}
       
       <RoleProvider>
