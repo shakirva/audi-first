@@ -116,8 +116,10 @@ export default function BookingModal({ onClose, prefillDate = "", editData = nul
     }
 
     const payload = { ...form, status: form.status || "Enquiry" };
-    if (adv > 0 && !editData) {
-      const modeNote = `[Advance ₹${adv} via ${form.paymentMode}]`;
+    if (!editData) {
+      const modeNote = adv > 0 
+        ? `[Advance ₹${adv} via ${form.paymentMode}]`
+        : `[Payment Mode: ${form.paymentMode}]`;
       payload.notes = payload.notes ? `${modeNote}\n${payload.notes}` : modeNote;
     }
 
@@ -284,27 +286,25 @@ export default function BookingModal({ onClose, prefillDate = "", editData = nul
               </div>
             )}
 
-            {/* Payment Mode (only shows if advance > 0) */}
-            {Number(form.advance) > 0 && (
-              <div style={{ marginTop: 16, background: "#f9fafb", padding: 12, borderRadius: 12, border: "1px solid #e5e7eb" }}>
-                <label style={labelSt}>Payment Mode for Advance</label>
-                <div style={{ display: "flex", gap: 8 }}>
-                  {["UPI", "Cash", "Bank"].map(m => (
-                    <label key={m} style={{
-                      flex: 1, textAlign: "center", padding: "8px 4px", borderRadius: 8, cursor: "pointer",
-                      border: `1.5px solid ${form.paymentMode === m ? "#1B4332" : "#d1d5db"}`,
-                      background: form.paymentMode === m ? "#f0fdf4" : "#fff",
-                      color: form.paymentMode === m ? "#1B4332" : "#374151",
-                      fontSize: 12, fontWeight: 700, transition: "all 0.15s",
-                    }}>
-                      <input type="radio" name="paymentMode" value={m} checked={form.paymentMode === m}
-                        onChange={handleChange} style={{ display: "none" }} />
-                      {m}
-                    </label>
-                  ))}
-                </div>
+            {/* Payment Mode */}
+            <div style={{ marginTop: 16, background: "#f9fafb", padding: 12, borderRadius: 12, border: "1px solid #e5e7eb", gridColumn: "1 / -1" }}>
+              <label style={labelSt}>Payment Mode</label>
+              <div style={{ display: "flex", gap: 8 }}>
+                {["UPI", "Cash", "Bank"].map(m => (
+                  <label key={m} style={{
+                    flex: 1, textAlign: "center", padding: "8px 4px", borderRadius: 8, cursor: "pointer",
+                    border: `1.5px solid ${form.paymentMode === m ? "#1B4332" : "#d1d5db"}`,
+                    background: form.paymentMode === m ? "#f0fdf4" : "#fff",
+                    color: form.paymentMode === m ? "#1B4332" : "#374151",
+                    fontSize: 12, fontWeight: 700, transition: "all 0.15s",
+                  }}>
+                    <input type="radio" name="paymentMode" value={m} checked={form.paymentMode === m}
+                      onChange={handleChange} style={{ display: "none" }} />
+                    {m}
+                  </label>
+                ))}
               </div>
-            )}
+            </div>
           </div>
 
           {/* ── SECTION: Notes ── */}
