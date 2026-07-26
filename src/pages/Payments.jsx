@@ -21,7 +21,7 @@ function urgencyStyle(days) {
 
 export default function Payments() {
   const { addToast } = useToast();
-  const { bookings, updateStatus } = useBookings();
+  const { bookings, updateBooking, updateStatus } = useBookings();
   const [paid, setPaid]                   = useState({});
   const [reminderDays, setReminderDays]   = useState([3, 7]);
   const [sentReminders, setSentReminders] = useState({});
